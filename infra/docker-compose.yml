@@ -1,0 +1,191 @@
+# SiroMix V2 - Docker Compose Configuration
+# MVP Foundation: Development Environment
+
+version: '3.8'
+
+services:
+  # ============================================================
+  # PostgreSQL Database
+  # ============================================================
+  db:
+    image: postgres:15-alpine
+    container_name: siromix-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-siromix}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-siromix_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-siromix_v2}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U siromix -d siromix_v2"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - siromix-network
+
+  # ============================================================
+  # Redis (Job Queue & Cache)
+  # ============================================================
+  redis:
+    image: redis:7-alpine
+    container_name: siromix-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - siromix-network
+
+  # ============================================================
+  # Backend API (FastAPI)
+  # ============================================================
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: siromix-backend
+    environment:
+      # Database
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-siromix}:${POSTGRES_PASSWORD:-siromix_dev_password}@db:5432/${POSTGRES_DB:-siromix_v2}
+      
+      # Redis
+      REDIS_URL: redis://redis:6379/0
+      
+      # Celery
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      
+      # Google OAuth
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      
+      # API Config
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      
+      # Development
+      ENVIRONMENT: development
+      DEBUG: "true"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../backend:/app
+      - /app/.venv  # Exclude venv from volume
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "
+        echo 'Starting FastAPI server...' &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+    networks:
+      - siromix-network
+    restart: unless-stopped
+
+  # ============================================================
+  # Celery Worker
+  # ============================================================
+  worker:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: siromix-worker
+    environment:
+      # Database
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-siromix}:${POSTGRES_PASSWORD:-siromix_dev_password}@db:5432/${POSTGRES_DB:-siromix_v2}
+      
+      # Redis
+      REDIS_URL: redis://redis:6379/0
+      
+      # Celery
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      
+      # Development
+      ENVIRONMENT: development
+      DEBUG: "true"
+    volumes:
+      - ../backend:/app
+      - /app/.venv  # Exclude venv from volume
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "
+        echo 'Worker service ready (Celery will be implemented in Phase 4)' &&
+        tail -f /dev/null
+      "
+    networks:
+      - siromix-network
+    restart: unless-stopped
+
+  # ============================================================
+  # Frontend (Next.js)
+  # ============================================================
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: siromix-frontend
+    environment:
+      # API
+      API_BASE_URL: ${API_BASE_URL:-http://localhost:8000}
+      NEXT_PUBLIC_API_BASE_URL: ${API_BASE_URL:-http://localhost:8000}
+      
+      # NextAuth
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      
+      # Google OAuth
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      
+      # Development
+      NODE_ENV: development
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules  # Exclude node_modules from volume
+      - /app/.next  # Exclude .next from volume
+    depends_on:
+      - backend
+    command: >
+      sh -c "
+        echo 'Installing frontend dependencies...' &&
+        npm install &&
+        echo 'Starting Next.js development server...' &&
+        npm run dev
+      "
+    networks:
+      - siromix-network
+    restart: unless-stopped
+
+# ============================================================
+# Volumes
+# ============================================================
+volumes:
+  postgres_data:
+    name: siromix_postgres_data
+  redis_data:
+    name: siromix_redis_data
+
+# ============================================================
+# Networks
+# ============================================================
+networks:
+  siromix-network:
+    name: siromix_network
+    driver: bridge

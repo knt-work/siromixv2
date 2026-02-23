@@ -1,0 +1,204 @@
+# ============================================================
+# SiroMix V2 - Monorepo .gitignore
+# ============================================================
+# Generated: 2026-02-22
+# Project: Full-stack monorepo (Python backend, Next.js frontend)
+
+# ============================================================
+# Python (Backend)
+# ============================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+backend/.venv/
+backend/venv/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# Ruff
+.ruff_cache/
+
+# ============================================================
+# Node.js / JavaScript / TypeScript (Frontend)
+# ============================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Next.js
+frontend/.next/
+frontend/out/
+frontend/build/
+.next/
+out/
+
+# Production builds
+dist/
+build/
+
+# Dependency directories
+jspm_packages/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# ============================================================
+# Environment Variables & Secrets
+# ============================================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+!.env.example
+
+# ============================================================
+# Docker
+# ============================================================
+docker-compose.override.yml
+
+# ============================================================
+# Database
+# ============================================================
+*.db
+*.sqlite
+*.sqlite3
+postgres-data/
+pgdata/
+
+# ============================================================
+# IDE / Editor
+# ============================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ============================================================
+# Logs
+# ============================================================
+*.log
+logs/
+*.log.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ============================================================
+# OS
+# ============================================================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ============================================================
+# Temporary Files
+# ============================================================
+*.tmp
+*.temp
+*.swp
+*.bak
+*.orig
+
+# ============================================================
+# Alembic (Database Migrations)
+# ============================================================
+# Keep migrations tracked, but ignore __pycache__
+backend/alembic/__pycache__/
+
+# ============================================================
+# Poetry
+# ============================================================
+poetry.lock
+# Keep pyproject.toml tracked
+
+# ============================================================
+# Redis
+# ============================================================
+dump.rdb
+
+# ============================================================
+# Testing
+# ============================================================
+.pytest_cache/
+.vitest/
+coverage/
+.nyc_output/
+
+# ============================================================
+# Build artifacts
+# ============================================================
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.dylib
+*.dll
+*.exe
+
+# ============================================================
+# Speckit (keep specifications tracked)
+# ============================================================
+# All .specify/ and specs/ content IS tracked
+# Only ignore generated artifacts if any
+
+# ============================================================
+# END
+# ============================================================

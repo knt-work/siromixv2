@@ -27,14 +27,14 @@ This is a monorepo with:
 
 **Purpose**: Project initialization and monorepo structure
 
-- [ ] T001 Create monorepo directory structure: backend/, frontend/, infra/, specs/, .specify/, .github/
-- [ ] T002 [P] Initialize backend Python project in backend/ with pyproject.toml, configure Poetry/pip dependencies (FastAPI, SQLAlchemy, Celery, google-auth, pytest)
-- [ ] T003 [P] Initialize frontend Next.js 14 project in frontend/ with package.json, configure TypeScript, Tailwind CSS, NextAuth
-- [ ] T004 [P] Create infra/docker-compose.yml with services: postgres, redis, backend, frontend, worker
-- [ ] T005 [P] Setup backend testing framework: pytest, pytest-asyncio, httpx in backend/tests/conftest.py
-- [ ] T006 [P] Setup frontend testing framework: Vitest, React Testing Library in frontend/vitest.config.ts
-- [ ] T007 [P] Create .env.example with all required environment variables (GOOGLE_CLIENT_ID, DATABASE_URL, REDIS_URL, etc.)
-- [ ] T008 [P] Configure linting: Ruff/Black for backend, ESLint/Prettier for frontend
+- [X] T001 Create monorepo directory structure: backend/, frontend/, infra/, specs/, .specify/, .github/
+- [X] T002 [P] Initialize backend Python project in backend/ with pyproject.toml, configure Poetry/pip dependencies (FastAPI, SQLAlchemy, Celery, google-auth, pytest)
+- [X] T003 [P] Initialize frontend Next.js 14 project in frontend/ with package.json, configure TypeScript, Tailwind CSS, NextAuth
+- [X] T004 [P] Create infra/docker-compose.yml with services: postgres, redis, backend, frontend, worker
+- [X] T005 [P] Setup backend testing framework: pytest, pytest-asyncio, httpx in backend/tests/conftest.py
+- [X] T006 [P] Setup frontend testing framework: Vitest, React Testing Library in frontend/vitest.config.ts
+- [X] T007 [P] Create .env.example with all required environment variables (GOOGLE_CLIENT_ID, DATABASE_URL, REDIS_URL, etc.)
+- [X] T008 [P] Configure linting: Ruff/Black for backend, ESLint/Prettier for frontend
 
 ---
 

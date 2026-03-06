@@ -25,6 +25,7 @@ async def create_test_user(
         google_sub = f"test_sub_{uuid4().hex[:8]}"
     
     user = User(
+        user_id=uuid4(),
         google_sub=google_sub,
         email=email,
         display_name=display_name,
@@ -45,6 +46,7 @@ async def create_test_task(
 ) -> Task:
     """Create a test task in the database."""
     task = Task(
+        task_id=uuid4(),
         user_id=user.user_id,
         status=status,
         current_stage=current_stage,
@@ -66,8 +68,8 @@ async def create_test_log(
     data_json: Dict[str, Any] = None,
 ) -> TaskLog:
     """Create a test log entry in the database."""
-    log = TaskLog(
-        task_id=task.task_id,
+    log = TaskLostr(task.task_id),  # Convert UUID to string
+        stage=stage.value if stage else Nonsk.task_id,
         stage=stage,
         level=level,
         message=message,

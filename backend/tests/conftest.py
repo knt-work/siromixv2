@@ -17,9 +17,12 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.pool import NullPool
 
-from app.core.database import Base
+from app.core.database import Base, get_db
 from app.main import app
 from app.models.user import User
+from app.models.task import Task, TaskStatus
+from app.models.task_log import TaskLog, LogLevel
+import uuid
 
 # Test database URL (use in-memory or separate test database)
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -70,6 +73,7 @@ async def async_session(async_engine) -> AsyncGenerator[AsyncSession, None]:
 async def test_user(async_session: AsyncSession) -> User:
     """Create a test user."""
     user = User(
+        user_id=uuid.uuid4(),
         google_sub="test_google_sub_123",
         email="test@example.com",
         display_name="Test User",
@@ -80,7 +84,49 @@ async def test_user(async_session: AsyncSession) -> User:
     return user
 
 
-@pytest.fixture
+@pytest_asyncio.fixture(scope="function")
+async def test_task(async_session: AsyncSession, test_user: User) -> Task:
+    """Create a test task."""
+    task = Task(
+        task_id=uuid.uuid4(),
+        user_id=test_user.user_id,
+        status=TaskStatus.QUEUED,
+        progress=0,
+        retry_count_by_stage={},
+    )
+    async_session.add(task)
+    await async_session.commit()
+    await async_session.refresh(task)
+    return task
+
+
+@pytest_asyncio.fixture(scope="function")
+async def test_task_log(async_session: AsyncSession, test_task: Task) -> TaskLog:
+    """Create a test task log entry."""
+    log = TaskLog(
+        task_id=str(test_task.task_id),
+        stage="extract_docx",
+        level=LogLevel.async_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
+    """
+    Create async HTTP client for testing FastAPI endpoints.
+    
+    Overrides database dependency to use test database.
+    
+    Usage:
+        async def test_endpoint(async_client):
+            response = await async_client.get("/api/v1/endpoint")
+            assert response.status_code == 200
+    """
+    # Override database dependency
+    async def override_get_db():
+        yield async_session
+    
+    app.dependency_overrides[get_db] = override_get_db
+    
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        yield client
+    
+    app.dependency_overrides.clear()
 def mock_google_token() -> str:
     """Return a mock Google ID token for testing."""
     # In real tests, this would be a properly structured JWT

@@ -44,22 +44,22 @@ This is a monorepo with:
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T009 Create database models in backend/app/models/__init__.py: import User, Task, TaskLog
-- [ ] T010 [P] Implement User model in backend/app/models/user.py with fields: user_id, google_sub, email, display_name, created_at, updated_at
-- [ ] T011 [P] Implement Task model in backend/app/models/task.py with fields: task_id, user_id, status, current_stage, progress, retry_count_by_stage, error, created_at, updated_at
-- [ ] T012 [P] Implement TaskLog model in backend/app/models/task_log.py with fields: log_id, task_id, stage, level, message, data_json, timestamp
-- [ ] T013 Setup Alembic in backend/alembic/ and create initial migration for User, Task, TaskLog tables
-- [ ] T014 [P] Create Pydantic schemas in backend/app/schemas/user.py: UserCreate, UserResponse
-- [ ] T015 [P] Create Pydantic schemas in backend/app/schemas/task.py: TaskCreate, TaskResponse, TaskStatus, TaskStage enums
-- [ ] T016 [P] Create Pydantic schemas in backend/app/schemas/task_log.py: TaskLogResponse, LogLevel enum
-- [ ] T017 [P] Implement database connection setup in backend/app/core/database.py with async SQLAlchemy engine and session factory
-- [ ] T018 [P] Implement core auth utilities in backend/app/core/auth.py: verify_google_token function using google-auth library
-- [ ] T019 [P] Create FastAPI dependency in backend/app/core/deps.py: get_current_user that verifies token and returns User
-- [ ] T020 Setup FastAPI app structure in backend/app/main.py: create app, include routers, configure CORS
-- [ ] T021 [P] Create Redis connection setup in backend/app/core/redis.py for Celery broker
-- [ ] T022 [P] Create Celery app configuration in backend/app/tasks/celery_app.py with Redis broker and result backend
-- [ ] T023 [P] Setup test fixtures in backend/tests/conftest.py: async database session, test user, mock Google token
-- [ ] T024 [P] Create test utilities in backend/tests/utils.py: create_test_user, create_test_task, mock_google_token_verify
+- [X] T009 Create database models in backend/app/models/__init__.py: import User, Task, TaskLog
+- [X] T010 [P] Implement User model in backend/app/models/user.py with fields: user_id, google_sub, email, display_name, created_at, updated_at
+- [X] T011 [P] Implement Task model in backend/app/models/task.py with fields: task_id, user_id, status, current_stage, progress, retry_count_by_stage, error, created_at, updated_at
+- [X] T012 [P] Implement TaskLog model in backend/app/models/task_log.py with fields: log_id, task_id, stage, level, message, data_json, timestamp
+- [X] T013 Setup Alembic in backend/alembic/ and create initial migration for User, Task, TaskLog tables
+- [X] T014 [P] Create Pydantic schemas in backend/app/schemas/user.py: UserCreate, UserResponse
+- [X] T015 [P] Create Pydantic schemas in backend/app/schemas/task.py: TaskCreate, TaskResponse, TaskStatus, TaskStage enums
+- [X] T016 [P] Create Pydantic schemas in backend/app/schemas/task_log.py: TaskLogResponse, LogLevel enum
+- [X] T017 [P] Implement database connection setup in backend/app/core/database.py with async SQLAlchemy engine and session factory
+- [X] T018 [P] Implement core auth utilities in backend/app/core/auth.py: verify_google_token function using google-auth library
+- [X] T019 [P] Create FastAPI dependency in backend/app/core/deps.py: get_current_user that verifies token and returns User
+- [X] T020 Setup FastAPI app structure in backend/app/main.py: create app, include routers, configure CORS
+- [X] T021 [P] Create Redis connection setup in backend/app/core/redis.py for Celery broker
+- [X] T022 [P] Create Celery app configuration in backend/app/tasks/celery_app.py with Redis broker and result backend
+- [X] T023 [P] Setup test fixtures in backend/tests/conftest.py: async database session, test user, mock Google token
+- [X] T024 [P] Create test utilities in backend/tests/utils.py: create_test_user, create_test_task, mock_google_token_verify
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 

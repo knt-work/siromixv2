@@ -4,7 +4,7 @@
  * Polling logic with useEffect + setInterval (2-3s), cleanup on unmount, stop when task completed/failed.
  */
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { getTask, TaskWithLogsResponse } from '@/lib/api/tasks';
 
 interface UseTaskPollingOptions {
@@ -19,6 +19,7 @@ interface UseTaskPollingResult {
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
+  startPolling: () => void;
 }
 
 export function useTaskPolling({
@@ -30,51 +31,87 @@ export function useTaskPolling({
   const [task, setTask] = useState<TaskWithLogsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isMountedRef = useRef(true);
+  const idTokenRef = useRef(idToken);
+  const intervalMsRef = useRef(interval);
+
+  // Keep refs in sync
+  idTokenRef.current = idToken;
+  intervalMsRef.current = interval;
+
+  const stopPolling = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
 
   const fetchTask = useCallback(async () => {
-    if (!idToken) {
+    const token = idTokenRef.current;
+    if (!token) {
       setError('No authentication token available');
       setLoading(false);
-      return;
+      return null;
     }
 
     try {
-      const data = await getTask(taskId, idToken);
+      const data = await getTask(taskId, token);
+      
+      if (!isMountedRef.current) return null;
+      
       setTask(data);
       setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch task');
-    } finally {
       setLoading(false);
+      
+      // Stop polling if task reached terminal state
+      if (data && (data.status === 'completed' || data.status === 'failed')) {
+        stopPolling();
+      }
+      
+      return data;
+    } catch (err) {
+      if (!isMountedRef.current) return null;
+      
+      setError(err instanceof Error ? err.message : 'Failed to fetch task');
+      setLoading(false);
+      return null;
     }
-  }, [taskId, idToken]);
+  }, [taskId, stopPolling]);
+
+  const startPolling = useCallback(() => {
+    // Clear any existing interval first
+    stopPolling();
+    // Fetch immediately then start interval
+    fetchTask();
+    intervalRef.current = setInterval(() => {
+      fetchTask();
+    }, intervalMsRef.current);
+  }, [fetchTask, stopPolling]);
 
   useEffect(() => {
-    if (!enabled) return;
-
-    // Initial fetch
-    fetchTask();
-
-    // Stop polling if task is in terminal state
-    if (task && (task.status === 'completed' || task.status === 'failed')) {
+    isMountedRef.current = true;
+    
+    if (!enabled || !idToken) {
+      setLoading(false);
       return;
     }
 
-    // Set up polling interval
-    const pollInterval = setInterval(() => {
-      fetchTask();
-    }, interval);
+    // Initial fetch and start polling
+    startPolling();
 
-    // Cleanup on unmount
+    // Cleanup on unmount or when dependencies change
     return () => {
-      clearInterval(pollInterval);
+      isMountedRef.current = false;
+      stopPolling();
     };
-  }, [enabled, fetchTask, interval, task]);
+  }, [enabled, idToken, taskId, startPolling, stopPolling]);
 
   return {
     task,
     loading,
     error,
     refetch: fetchTask,
+    startPolling,
   };
 }

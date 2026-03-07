@@ -40,7 +40,7 @@ celery_app.conf.update(
     
     # Task routing
     task_routes={
-        "backend.app.tasks.pipeline.*": {"queue": "pipeline"},
+        "app.tasks.pipeline.*": {"queue": "pipeline"},
     },
     
     # Task execution
@@ -58,7 +58,10 @@ celery_app.conf.update(
 
 
 # Auto-discover tasks from app.tasks module
-celery_app.autodiscover_tasks(["backend.app.tasks"])
+celery_app.autodiscover_tasks(["app.tasks"])
+
+# Explicitly import tasks to ensure they are registered
+from app.tasks import process_task  # noqa: F401, E402
 
 
 # T085: Graceful shutdown handling

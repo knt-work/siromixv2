@@ -30,7 +30,7 @@ export default function TaskProgressPage() {
   const [retryError, setRetryError] = useState<string | null>(null);
 
   // T078: Connect TaskProgress page to polling
-  const { task, loading, error, refetch } = useTaskPolling({
+  const { task, loading, error, refetch, startPolling } = useTaskPolling({
     taskId,
     idToken: session?.idToken || null,
     interval: 2500, // 2.5 seconds
@@ -54,8 +54,8 @@ export default function TaskProgressPage() {
 
     try {
       await retryTask(taskId, session.idToken);
-      // Refetch to get updated task status
-      await refetch();
+      // Restart polling to track the retried task
+      startPolling();
     } catch (err) {
       setRetryError(err instanceof Error ? err.message : 'Failed to retry task');
     } finally {

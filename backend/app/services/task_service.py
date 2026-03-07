@@ -273,8 +273,8 @@ async def retry_task(
         from sqlalchemy.orm import attributes
         attributes.flag_modified(task, "retry_count_by_stage")
     
-    # Reset task to running state
-    task.status = TaskStatus.RUNNING
+    # Reset task to queued state (will be set to running when Celery worker picks it up)
+    task.status = TaskStatus.QUEUED
     task.error = None
     
     await db.commit()

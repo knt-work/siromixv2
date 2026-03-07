@@ -5,7 +5,7 @@ TaskLog model: Structured observability logs for task execution.
 import enum
 import uuid
 from datetime import datetime
-from sqlalchemy import String, Integer, Text, DateTime, ForeignKey, Enum, Uuid
+from sqlalchemy import String, Integer, Text, DateTime, ForeignKey, Enum, Uuid, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import JSONB
@@ -77,7 +77,7 @@ class TaskLog(Base):
     )
     
     data_json: Mapped[dict | None] = mapped_column(
-        JSONB,
+        JSON().with_variant(JSONB, "postgresql"),
         nullable=True,
         comment="Structured metadata"
     )

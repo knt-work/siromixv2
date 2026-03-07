@@ -15,7 +15,7 @@ import pytest
 import pytest_asyncio
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy.pool import NullPool
+from sqlalchemy.pool import StaticPool
 
 from app.core.database import Base, get_db
 from app.main import app
@@ -41,8 +41,9 @@ async def async_engine():
     """Create async engine for tests."""
     engine = create_async_engine(
         TEST_DATABASE_URL,
-        echo=False,
-        poolclass=NullPool,
+        echo=False,  # Disable SQL logging
+        poolclass=StaticPool,  # Use StaticPool for in-memory SQLite
+        connect_args={"check_same_thread": False},  # Allow multiple threads
     )
 
     async with engine.begin() as conn:
@@ -106,15 +107,26 @@ async def test_task_log(async_session: AsyncSession, test_task: Task) -> TaskLog
     log = TaskLog(
         task_id=str(test_task.task_id),
         stage="extract_docx",
-        level=LogLevel.async_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
+        level=LogLevel.INFO,
+        message="Test log message",
+        data_json=None,
+    )
+    async_session.add(log)
+    await async_session.commit()
+    await async_session.refresh(log)
+    return log
+
+
+@pytest_asyncio.fixture(scope="function")
+async def async_client_with_db(async_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     """
     Create async HTTP client for testing FastAPI endpoints.
     
     Overrides database dependency to use test database.
     
     Usage:
-        async def test_endpoint(async_client):
-            response = await async_client.get("/api/v1/endpoint")
+        async def test_endpoint(async_client_with_db):
+            response = await async_client_with_db.get("/api/v1/endpoint")
             assert response.status_code == 200
     """
     # Override database dependency

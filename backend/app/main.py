@@ -9,8 +9,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+env_path = Path(__file__).parent.parent / '.env'
+load_dotenv(dotenv_path=env_path)
 
 from app.core.database import close_db
+from app.api.v1.api import api_router
 
 
 # Application metadata
@@ -46,16 +53,17 @@ async def lifespan(app: FastAPI):
     Handles startup and shutdown events.
     """
     # Startup
-    print("🚀 Starting SiroMix V2 API...")
-    print("✅ Database models loaded")
-    print("✅ Phase 2: Foundational infrastructure ready")
+    print("[*] Starting SiroMix V2 API...")
+    print("[+] Database models loaded")
+    print("[+] Phase 2: Foundational infrastructure ready")
+    print("[+] Phase 3: OAuth authentication endpoints active")
     
     yield
     
     # Shutdown
-    print("👋 Shutting down SiroMix V2 API...")
+    print("[*] Shutting down SiroMix V2 API...")
     await close_db()
-    print("✅ Database connections closed")
+    print("[+] Database connections closed")
 
 
 # Create FastAPI app
@@ -70,14 +78,15 @@ app = FastAPI(
 )
 
 
-# Configure CORS
-CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+# Configure CORS - Load from environment
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001").split(",")
+CORS_ORIGINS = [origin.strip() for origin in CORS_ORIGINS]  # Remove any whitespace
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origins=CORS_ORIGINS,  # Explicit list of allowed origins
+    allow_credentials=True,  # Allow cookies and Authorization headers
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -90,7 +99,7 @@ async def root():
     return {
         "service": "SiroMix V2 API",
         "version": APP_VERSION,
-        "status": "operational",
+        "status": "operational - Phase 3: User Story 1 (OAuth)",
         "phase": "Phase 2: Foundational Complete",
         "docs": "/docs",
     }
@@ -108,9 +117,8 @@ async def health_check():
     }
 
 
-# TODO: Include API routers when implemented in Phase 3+
-# from backend.app.api.v1.api import api_router
-# app.include_router(api_router, prefix="/api/v1")
+# Include API v1 routes
+app.include_router(api_router, prefix="/api/v1")
 
 
 if __name__ == "__main__":

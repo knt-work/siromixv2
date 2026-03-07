@@ -68,8 +68,8 @@ async def create_test_log(
     data_json: Dict[str, Any] = None,
 ) -> TaskLog:
     """Create a test log entry in the database."""
-    log = TaskLostr(task.task_id),  # Convert UUID to string
-        stage=stage.value if stage else Nonsk.task_id,
+    log = TaskLog(
+        task_id=task.task_id,
         stage=stage,
         level=level,
         message=message,

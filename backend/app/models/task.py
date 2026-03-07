@@ -5,7 +5,7 @@ Task model: Asynchronous processing jobs through pipeline stages.
 import uuid
 import enum
 from datetime import datetime
-from sqlalchemy import String, Integer, Text, DateTime, ForeignKey, Enum, CheckConstraint
+from sqlalchemy import String, Integer, Text, DateTime, ForeignKey, Enum, CheckConstraint, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import JSONB
@@ -91,7 +91,7 @@ class Task(Base):
     
     # Retry metadata
     retry_count_by_stage: Mapped[dict] = mapped_column(
-        JSONB,
+        JSON().with_variant(JSONB, "postgresql"),
         nullable=False,
         default=dict,
         server_default="{}",

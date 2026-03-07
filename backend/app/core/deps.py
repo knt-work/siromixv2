@@ -40,8 +40,13 @@ async def get_current_user(
         async def protected_route(user: User = Depends(get_current_user)):
             return {"user_id": user.user_id}
     """
+    # Debug logging
+    print(f"[DEBUG] Authorization header: {authorization}")
+    
     # Extract token from header
     token = extract_bearer_token(authorization)
+    
+    print(f"[DEBUG] Extracted token: {token[:50] if token else None}...")
     
     if not token:
         raise HTTPException(
@@ -53,7 +58,9 @@ async def get_current_user(
     # Verify Google token
     try:
         user_info = await verify_google_token(token)
+        print(f"[DEBUG] User info: {user_info}")
     except GoogleTokenError as e:
+        print(f"[DEBUG] Token verification failed: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Invalid token: {str(e)}",

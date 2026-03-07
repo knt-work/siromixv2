@@ -75,21 +75,21 @@ This is a monorepo with:
 
 > **CONSTITUTION REQUIREMENT: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T025 [P] [US1] Unit tests for User model in backend/tests/unit/test_user_model.py: test user creation, google_sub uniqueness
-- [ ] T026 [P] [US1] Unit tests for verify_google_token in backend/tests/unit/test_auth.py: test valid token, expired token, invalid signature
-- [ ] T027 [P] [US1] Contract test for GET /api/v1/me in backend/tests/contract/test_me_endpoint.py: test 200 with valid token, 401 without token
-- [ ] T028 [P] [US1] Integration test for auth flow in backend/tests/integration/test_auth_flow.py: test user creation on first login, user retrieval on subsequent logins
+- [X] T025 [P] [US1] Unit tests for User model in backend/tests/unit/test_user_model.py: test user creation, google_sub uniqueness
+- [X] T026 [P] [US1] Unit tests for verify_google_token in backend/tests/unit/test_auth.py: test valid token, expired token, invalid signature
+- [X] T027 [P] [US1] Contract test for GET /api/v1/me in backend/tests/contract/test_me_endpoint.py: test 200 with valid token, 401 without token
+- [X] T028 [P] [US1] Integration test for auth flow in backend/tests/integration/test_auth_flow.py: test user creation on first login, user retrieval on subsequent logins
 
 ### Implementation for User Story 1
 
-- [ ] T029 [P] [US1] Implement user service in backend/app/services/user_service.py: get_or_create_user(google_sub, email, display_name)
-- [ ] T030 [US1] Implement GET /api/v1/me endpoint in backend/app/api/v1/endpoints/me.py using get_current_user dependency
-- [ ] T031 [US1] Create API router in backend/app/api/v1/api.py and include me endpoint
-- [ ] T032 [P] [US1] Configure NextAuth in frontend/src/app/api/auth/[...nextauth]/route.ts with Google Provider, store ID token in JWT callback
-- [ ] T033 [P] [US1] Create auth context in frontend/src/lib/auth/AuthContext.tsx: expose session and idToken
-- [ ] T034 [P] [US1] Create API client in frontend/src/lib/api/client.ts: fetch wrapper that adds Authorization: Bearer header
-- [ ] T035 [US1] Create login page in frontend/src/app/page.tsx with "Sign in with Google" button using NextAuth signIn
-- [ ] T036 [US1] Add authentication to frontend layout in frontend/src/app/layout.tsx: wrap with SessionProvider
+- [X] T029 [P] [US1] Implement user service in backend/app/services/user_service.py: get_or_create_user(google_sub, email, display_name)
+- [X] T030 [US1] Implement GET /api/v1/me endpoint in backend/app/api/v1/endpoints/me.py using get_current_user dependency
+- [X] T031 [US1] Create API router in backend/app/api/v1/api.py and include me endpoint
+- [X] T032 [P] [US1] Configure NextAuth in frontend/src/app/api/auth/[...nextauth]/route.ts with Google Provider, store ID token in JWT callback
+- [X] T033 [P] [US1] Create auth context in frontend/src/lib/auth/AuthContext.tsx: expose session and idToken
+- [X] T034 [P] [US1] Create API client in frontend/src/lib/api/client.ts: fetch wrapper that adds Authorization: Bearer header
+- [X] T035 [US1] Create login page in frontend/src/app/page.tsx with "Sign in with Google" button using NextAuth signIn
+- [X] T036 [US1] Add authentication to frontend layout in frontend/src/app/layout.tsx: wrap with SessionProvider
 - [ ] T037 [US1] Test full OAuth flow: frontend login → backend token verification → user creation → GET /api/v1/me returns user data
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently

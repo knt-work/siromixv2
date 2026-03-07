@@ -61,6 +61,7 @@ NEXTAUTH_SECRET=generate-with-openssl-rand-base64-32
 # Backend API Configuration
 # ============================================================
 API_BASE_URL=http://localhost:8000
+CORS_ORIGINS=http://localhost:3000
 
 # ============================================================
 # Database Configuration

@@ -124,8 +124,8 @@ services:
         condition: service_healthy
     command: >
       sh -c "
-        echo 'Worker service ready (Celery will be implemented in Phase 4)' &&
-        tail -f /dev/null
+        echo 'Starting Celery worker...' &&
+        celery -A app.tasks.celery_app worker --loglevel=info --concurrency=2
       "
     networks:
       - siromix-network

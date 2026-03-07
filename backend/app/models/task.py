@@ -5,7 +5,7 @@ Task model: Asynchronous processing jobs through pipeline stages.
 import uuid
 import enum
 from datetime import datetime
-from sqlalchemy import String, Integer, Text, DateTime, ForeignKey, Enum, CheckConstraint, JSON
+from sqlalchemy import Integer, Text, DateTime, ForeignKey, Enum, CheckConstraint, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import JSONB

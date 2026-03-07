@@ -19,7 +19,6 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // @ts-ignore - idToken is added in jwt callback
   const idToken = session?.idToken as string | undefined;
   
   useEffect(() => {

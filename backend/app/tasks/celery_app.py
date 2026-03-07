@@ -6,7 +6,14 @@ Tasks are queued in Redis and processed by worker processes.
 """
 
 from celery import Celery
+from celery.signals import worker_shutdown
 import os
+import signal
+import sys
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 # Redis URLs for broker and result backend
@@ -52,6 +59,43 @@ celery_app.conf.update(
 
 # Auto-discover tasks from app.tasks module
 celery_app.autodiscover_tasks(["backend.app.tasks"])
+
+
+# T085: Graceful shutdown handling
+@worker_shutdown.connect
+def worker_shutdown_handler(sender, **kwargs):
+    """
+    Handle worker shutdown signal.
+    
+    This is called when the worker receives SIGTERM or SIGINT.
+    The worker will finish the current task before shutting down
+    due to task_acks_late=True configuration.
+    """
+    logger.info("Worker shutdown initiated. Finishing current tasks...")
+    logger.info("Current task will complete before worker exits.")
+
+
+def graceful_shutdown_signal_handler(signum, frame):
+    """
+    Handle SIGTERM/SIGINT signals for graceful shutdown.
+    
+    When the worker receives a shutdown signal:
+    1. Stop accepting new tasks
+    2. Allow current task to complete (task_acks_late=True)
+    3. Exit cleanly
+    """
+    signal_name = "SIGTERM" if signum == signal.SIGTERM else "SIGINT"
+    logger.info(f"Received {signal_name}. Initiating graceful shutdown...")
+    logger.info("Worker will finish current task before exiting.")
+    
+    # Let Celery handle the actual shutdown
+    # The worker_shutdown signal will be triggered
+    sys.exit(0)
+
+
+# Register signal handlers for graceful shutdown
+signal.signal(signal.SIGTERM, graceful_shutdown_signal_handler)
+signal.signal(signal.SIGINT, graceful_shutdown_signal_handler)
 
 
 if __name__ == "__main__":

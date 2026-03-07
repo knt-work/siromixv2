@@ -63,3 +63,19 @@ class TaskRetryRequest(BaseModel):
         False,
         description="Force retry even if task is not in failed state"
     )
+
+
+class TaskWithLogsResponse(TaskResponse):
+    """Schema for task response with logs included."""
+    
+    logs: list["TaskLogResponse"] = Field(
+        default_factory=list,
+        description="Recent log entries (last 50)"
+    )
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+# Forward reference resolution
+from app.schemas.task_log import TaskLogResponse
+TaskWithLogsResponse.model_rebuild()

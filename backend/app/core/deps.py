@@ -6,13 +6,16 @@ Provides dependency injection for authentication, database sessions, etc.
 
 from fastapi import Depends, HTTPException, status, Header
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 from typing import Optional
+import logging
 
 from app.core.database import get_db
 from app.core.auth import verify_google_token, extract_bearer_token, GoogleTokenError
 from app.models.user import User
 from app.services.user_service import get_or_create_user
+
+
+logger = logging.getLogger(__name__)
 
 
 async def get_current_user(
@@ -40,13 +43,12 @@ async def get_current_user(
         async def protected_route(user: User = Depends(get_current_user)):
             return {"user_id": user.user_id}
     """
-    # Debug logging
-    print(f"[DEBUG] Authorization header: {authorization}")
+    logger.debug(f"Authorization header: {authorization}")
     
     # Extract token from header
     token = extract_bearer_token(authorization)
     
-    print(f"[DEBUG] Extracted token: {token[:50] if token else None}...")
+    logger.debug(f"Extracted token: {token[:50] if token else None}...")
     
     if not token:
         raise HTTPException(
@@ -58,9 +60,9 @@ async def get_current_user(
     # Verify Google token
     try:
         user_info = await verify_google_token(token)
-        print(f"[DEBUG] User info: {user_info}")
+        logger.debug(f"User info: {user_info}")
     except GoogleTokenError as e:
-        print(f"[DEBUG] Token verification failed: {str(e)}")
+        logger.debug(f"Token verification failed: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Invalid token: {str(e)}",

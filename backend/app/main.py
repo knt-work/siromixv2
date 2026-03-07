@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import os
+import subprocess
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -16,8 +17,11 @@ from dotenv import load_dotenv
 env_path = Path(__file__).parent.parent / '.env'
 load_dotenv(dotenv_path=env_path)
 
-from app.core.database import close_db
+from app.core.database import close_db, AsyncSessionLocal
+from app.core.middleware import ErrorHandlingMiddleware, RequestLoggingMiddleware
 from app.api.v1.api import api_router
+from app.tasks.celery_app import celery_app
+from sqlalchemy import text
 
 
 # Application metadata
@@ -33,6 +37,19 @@ SiroMix V2 MVP Foundation - Exam Processing Platform
 - 🔄 **Retry Mechanism**: Automatic retry with per-stage retry counters
 - 📊 **Monitoring**: Structured logging with task execution logs
 - 🚀 **Mock Pipeline**: 5-stage simulation (extract → understanding → analysis → shuffle → render)
+
+## API Versioning (T086)
+
+**Current Version:** v1 (prefix: `/api/v1`)
+
+The API uses URL-based versioning to ensure backward compatibility.
+All endpoints are prefixed with `/api/v1/`.
+
+**Version Policy:**
+- Breaking changes require a new version (v2, v3, etc.)
+- Non-breaking changes and bug fixes stay in current version
+- Deprecated versions will be supported for at least 6 months
+- Version deprecation will be announced via API headers and documentation
 
 ## Authentication
 
@@ -54,6 +71,26 @@ async def lifespan(app: FastAPI):
     """
     # Startup
     print("[*] Starting SiroMix V2 API...")
+    
+    # Run database migrations automatically (T095: Quickstart validation)
+    try:
+        print("[*] Running database migrations...")
+        alembic_ini = Path(__file__).parent.parent / "alembic.ini"
+        result = subprocess.run(
+            ["alembic", "-c", str(alembic_ini), "upgrade", "head"],
+            cwd=Path(__file__).parent.parent,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        if result.returncode == 0:
+            print("[+] Database migrations completed successfully")
+        else:
+            print(f"[!] Migration warning: {result.stderr}")
+    except Exception as e:
+        print(f"[!] Could not run migrations automatically: {e}")
+        print("[!] Run manually: alembic upgrade head")
+    
     print("[+] Database models loaded")
     print("[+] Phase 2: Foundational infrastructure ready")
     print("[+] Phase 3: OAuth authentication endpoints active")
@@ -90,6 +127,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# T083: Error handling middleware - Catches unhandled exceptions
+app.add_middleware(ErrorHandlingMiddleware)
+
+# T084: Request logging middleware - Logs all API requests with timing
+app.add_middleware(RequestLoggingMiddleware)
+
 
 @app.get("/", tags=["Root"])
 async def root():
@@ -108,13 +151,61 @@ async def root():
 @app.get("/api/v1/health", tags=["Health"])
 async def health_check():
     """
-    Health check endpoint for monitoring and load balancers.
+    T090: Enhanced health check endpoint for monitoring and load balancers.
+    
+    Checks:
+    - Database connectivity (async SQLAlchemy)
+    - Redis connectivity (Celery broker)
+    - Overall service status
+    
+    Returns:
+        200 if all systems healthy
+        503 if any critical system is down
     """
-    return {
+    from fastapi import status as http_status
+    from fastapi.responses import JSONResponse
+    
+    health_status = {
         "status": "healthy",
         "service": "siromix-backend",
         "version": APP_VERSION,
+        "checks": {
+            "database": "unknown",
+            "redis": "unknown",
+        }
     }
+    
+    # Check database connectivity
+    try:
+        async with AsyncSessionLocal() as session:
+            await session.execute(text("SELECT 1"))
+        health_status["checks"]["database"] = "ok"
+    except Exception as e:
+        health_status["checks"]["database"] = f"error: {str(e)[:50]}"
+        health_status["status"] = "unhealthy"
+    
+    # Check Redis connectivity via Celery
+    try:
+        # Celery inspect with timeout to avoid hanging
+        inspect = celery_app.control.inspect(timeout=1.0)
+        stats = inspect.stats()
+        if stats:
+            health_status["checks"]["redis"] = "ok"
+        else:
+            # No workers, but broker is reachable
+            health_status["checks"]["redis"] = "ok (no workers)"
+    except Exception as e:
+        health_status["checks"]["redis"] = f"error: {str(e)[:50]}"
+        health_status["status"] = "unhealthy"
+    
+    # Return 503 if unhealthy
+    if health_status["status"] == "unhealthy":
+        return JSONResponse(
+            status_code=http_status.HTTP_503_SERVICE_UNAVAILABLE,
+            content=health_status
+        )
+    
+    return health_status
 
 
 # Include API v1 routes

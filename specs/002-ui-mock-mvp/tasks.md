@@ -40,49 +40,49 @@
 
 ### Design Foundations (BLOCKS EVERYTHING)
 
-- [ ] T008 Create design tokens file in frontend/src/components/design-system/tokens.ts with exported colors (primary, gray, status, success, warning, error), typography (fontFamily, fontSize, fontWeight, lineHeight), spacing (xs to 3xl), borderRadius, shadows per research.md
-- [ ] T009 Extend tailwind.config.js theme to use tokens from frontend/src/components/design-system/tokens.ts
-- [ ] T010 [P] Create theme configuration file in frontend/src/components/design-system/theme.ts with Tailwind theme extensions
+- [X] T008 Create design tokens file in frontend/src/components/design-system/tokens.ts with exported colors (primary, gray, status, success, warning, error), typography (fontFamily, fontSize, fontWeight, lineHeight), spacing (xs to 3xl), borderRadius, shadows per research.md
+- [X] T009 Extend tailwind.config.js theme to use tokens from frontend/src/components/design-system/tokens.ts
+- [X] T010 [P] Create theme configuration file in frontend/src/components/design-system/theme.ts with Tailwind theme extensions
 
 ### TypeScript Types (BLOCKS DATA FLOW)
 
-- [ ] T011 [P] Create User interface in frontend/src/types/user.ts per data-model.md (user_id, email, full_name, avatar_url, role, created_at)
-- [ ] T012 [P] Create Task and TaskStatus types in frontend/src/types/task.ts per data-model.md (task_id, user_id, status, progress, metadata, file_name, file_size, created_at, updated_at, completed_at, error, retry_count)
-- [ ] T013 [P] Create ExamMetadata interface in frontend/src/types/task.ts (academic_year, exam_name, subject, duration_minutes, num_versions, notes)
-- [ ] T014 [P] Create Question and AnswerOption types in frontend/src/types/question.ts per data-model.md (question_id, task_id, question_number, question_text, option_a/b/c/d, correct_answer, learning_objective)
-- [ ] T015 [P] Create TaskLog and LogLevel types in frontend/src/types/task-log.ts per data-model.md (log_id, task_id, log_level, message, timestamp, metadata)
-- [ ] T016 [P] Create ExamData interface in frontend/src/types/exam-data.ts per data-model.md (task_id, metadata, questions, num_questions, created_at)
-- [ ] T017 Create index.ts barrel export in frontend/src/types/ re-exporting all type files
+- [X] T011 [P] Create User interface in frontend/src/types/user.ts per data-model.md (user_id, email, full_name, avatar_url, role, created_at)
+- [X] T012 [P] Create Task and TaskStatus types in frontend/src/types/task.ts per data-model.md (task_id, user_id, status, progress, metadata, file_name, file_size, created_at, updated_at, completed_at, error, retry_count)
+- [X] T013 [P] Create ExamMetadata interface in frontend/src/types/task.ts (academic_year, exam_name, subject, duration_minutes, num_versions, notes)
+- [X] T014 [P] Create Question and AnswerOption types in frontend/src/types/question.ts per data-model.md (question_id, task_id, question_number, question_text, option_a/b/c/d, correct_answer, learning_objective)
+- [X] T015 [P] Create TaskLog and LogLevel types in frontend/src/types/task-log.ts per data-model.md (log_id, task_id, log_level, message, timestamp, metadata)
+- [X] T016 [P] Create ExamData interface in frontend/src/types/exam-data.ts per data-model.md (task_id, metadata, questions, num_questions, created_at)
+- [X] T017 Create index.ts barrel export in frontend/src/types/ re-exporting all type files
 
 ### State Management (BLOCKS USER INTERACTIONS)
 
-- [ ] T018 Create auth store in frontend/src/lib/state/auth-store.ts using Zustand with persist middleware per data-model.md (user, isAuthenticated, isLoading, login, logout, checkAuth actions, localStorage key 'auth-state')
-- [ ] T019 Create task store in frontend/src/lib/state/task-store.ts using Zustand with persist middleware per data-model.md (tasks, currentTask, createTask, updateTaskStatus, updateTaskError, retryTask, setCurrentTask, clearCurrentTask, addTaskLog actions, localStorage key 'task-state')
-- [ ] T020 [P] Create localStorage utility helpers in frontend/src/lib/state/storage.ts (getItem, setItem, removeItem with JSON parse/stringify and error handling)
+- [X] T018 Create auth store in frontend/src/lib/state/auth-store.ts using Zustand with persist middleware per data-model.md (user, isAuthenticated, isLoading, login, logout, checkAuth actions, localStorage key 'auth-state')
+- [X] T019 Create task store in frontend/src/lib/state/task-store.ts using Zustand with persist middleware per data-model.md (tasks, currentTask, createTask, updateTaskStatus, updateTaskError, retryTask, setCurrentTask, clearCurrentTask, addTaskLog actions, localStorage key 'task-state')
+- [X] T020 [P] Create localStorage utility helpers in frontend/src/lib/state/storage.ts (getItem, setItem, removeItem with JSON parse/stringify and error handling)
 
 ### Mock Data (BLOCKS TESTING)
 
-- [ ] T021 [P] Create mock user data in frontend/src/lib/mock-data/users.ts per data-model.md (mockUser with user_id: 'mock-user-1', email: 'john.doe@university.edu', full_name: 'John Doe', avatar_url, role: 'professor')
-- [ ] T022 [P] Create mock questions array in frontend/src/lib/mock-data/questions.ts with 15 sample questions per data-model.md (question_text, options A/B/C/D, correct_answer, learning_objective)
-- [ ] T023 [P] Create task factory function in frontend/src/lib/mock-data/tasks.ts (createMockTask accepting ExamMetadata and userId, returns Task with generated task_id, status: 'pending', progress: 0)
+- [X] T021 [P] Create mock user data in frontend/src/lib/mock-data/users.ts per data-model.md (mockUser with user_id: 'mock-user-1', email: 'john.doe@university.edu', full_name: 'John Doe', avatar_url, role: 'professor')
+- [X] T022 [P] Create mock questions array in frontend/src/lib/mock-data/questions.ts with 15 sample questions per data-model.md (question_text, options A/B/C/D, correct_answer, learning_objective)
+- [X] T023 [P] Create task factory function in frontend/src/lib/mock-data/tasks.ts (createMockTask accepting ExamMetadata and userId, returns Task with generated task_id, status: 'pending', progress: 0)
 
 ### Simulation Logic (BLOCKS PROCESSING FLOWS)
 
-- [ ] T024 Create pipeline simulation module in frontend/src/lib/simulation/pipeline.ts with stage durations (extract: 5s, understand: 5s, shuffle: 5s, generate: 5s) and progress mapping per research.md (pending: 0%, extracting: 12%, understanding: 37%, awaiting: 50%, shuffling: 62%, generating: 87%, completed: 100%)
-- [ ] T025 Create simulateStage async function in frontend/src/lib/simulation/pipeline.ts that waits for stage duration then calls onProgress callback with taskId, status, progress
-- [ ] T026 [P] Create OAuth simulation module in frontend/src/lib/simulation/oauth.ts with simulateGoogleOAuth function (1-2 second delay, returns mockUser)
-- [ ] T027 [P] Create polling utility in frontend/src/lib/simulation/polling.ts with configurable interval (default 3s) and cleanup logic
+- [X] T024 Create pipeline simulation module in frontend/src/lib/simulation/pipeline.ts with stage durations (extract: 5s, understand: 5s, shuffle: 5s, generate: 5s) and progress mapping per research.md (pending: 0%, extracting: 12%, understanding: 37%, awaiting: 50%, shuffling: 62%, generating: 87%, completed: 100%)
+- [X] T025 Create simulateStage async function in frontend/src/lib/simulation/pipeline.ts that waits for stage duration then calls onProgress callback with taskId, status, progress
+- [X] T026 [P] Create OAuth simulation module in frontend/src/lib/simulation/oauth.ts with simulateGoogleOAuth function (1-2 second delay, returns mockUser)
+- [X] T027 [P] Create polling utility in frontend/src/lib/simulation/polling.ts with configurable interval (default 3s) and cleanup logic
 
 ### Validation & Utilities (BLOCKS FORMS)
 
-- [ ] T028 [P] Create Zod validation schema in frontend/src/lib/validation/create-exam-schema.ts per research.md (academicYear, examName, subject, duration > 0, numVersions 1-10, notes optional, file .doc/.docx validation)
-- [ ] T029 [P] Create date formatter utilities in frontend/src/lib/utils/formatters.ts (formatDate, formatTimestamp, formatRelativeTime using date-fns)
-- [ ] T030 [P] Create constants file in frontend/src/lib/utils/constants.ts with TaskStatus enum, LogLevel enum, default values (POLLING_INTERVAL: 3000, PAGE_SIZE: 10)
+- [X] T028 [P] Create Zod validation schema in frontend/src/lib/validation/create-exam-schema.ts per research.md (academicYear, examName, subject, duration > 0, numVersions 1-10, notes optional, file .doc/.docx validation)
+- [X] T029 [P] Create date formatter utilities in frontend/src/lib/utils/formatters.ts (formatDate, formatTimestamp, formatRelativeTime using date-fns)
+- [X] T030 [P] Create constants file in frontend/src/lib/utils/constants.ts with TaskStatus enum, LogLevel enum, default values (POLLING_INTERVAL: 3000, PAGE_SIZE: 10)
 
 ### Testing Infrastructure (BLOCKS TEST EXECUTION)
 
-- [ ] T031 [P] Create test utilities file in frontend/tests/utils.tsx with custom render function wrapping Zustand providers, mock router, React Query provider
-- [ ] T032 [P] Update frontend/tests/setup.ts to configure global test environment, mock localStorage, matchMedia polyfill for Tailwind
+- [X] T031 [P] Create test utilities file in frontend/tests/utils.tsx with custom render function wrapping Zustand providers, mock router, React Query provider
+- [X] T032 [P] Update frontend/tests/setup.ts to configure global test environment, mock localStorage, matchMedia polyfill for Tailwind
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 

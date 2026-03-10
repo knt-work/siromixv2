@@ -1,59 +1,43 @@
 # Implementation Plan: SiroMix UI MVP (Mock Data Phase)
 
-**Branch**: `002-ui-mock-mvp` | **Date**: 2026-03-10 | **Spec**: [spec.md](spec.md)  
+**Branch**: `002-ui-mock-mvp` | **Date**: 2026-03-10 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `/specs/002-ui-mock-mvp/spec.md`
 
-**Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/plan-template.md` for the execution workflow.
+**Note**: This plan follows bottom-up architecture approach extracting exact Visily designs from html/ exports per clarifications session.
 
 ## Summary
 
-Implement complete frontend user experience for SiroMix exam processing workflow using **mock data and simulated backend** - no real API integration in this phase. Build UI foundation using **bottom-up architecture**: design tokens → atomic components → compound components → page sections → composed pages. Implement 6 prioritized user journeys: (1) Homepage & Navigation, (2) Simulated OAuth Authentication, (3) Create Exam Form, (4) Preview & Confirmation of extracted data, (5) Task Management with polling, (6) Exam Detail with retry. Technical approach: Next.js 14+ with TypeScript, component library following atomic design principles, frontend state management (React Context/Zustand), simulated processing pipeline using timers, localStorage for state persistence. All UI components are reusable, theme-able via design tokens derived from Visily designs, and architected for seamless backend integration in future phases.
+Build a fully functional Next.js/React frontend MVP with mock data demonstrating the complete SiroMix exam processing user journey across 6 pages: Homepage with Vietnamese hero content, Google OAuth simulation, Create Exam form with file upload, simulated multi-stage processing pipeline (extract→understand→shuffle→generate), Preview Analysis page with question table, Task Management with polling updates, and Exam Detail with retry capability. Implementation MUST follow bottom-up approach: design tokens extracted from Visily CSS → atomic UI components (Button, Input, Badge) → shared molecules/organisms → page sections → final pages with Vietnamese content. All designs sourced from html/ folder exports (6 Visily HTML/CSS/React prototypes) preserving exact per-page styling values (purple #9a94de brand, Inter font, custom shadows/radius/padding). No backend integration—pure frontend with localStorage persistence and JavaScript timers for stage simulation.
 
 ## Technical Context
 
 **Language/Version**: TypeScript 5.x with Next.js 14+ (App Router), React 18+  
-**Primary Dependencies**: Next.js 14+, React 18+, TypeScript 5.x, Tailwind CSS 3.x (or alternative CSS-in-JS), state management library (Zustand/Redux/React Context), React Hook Form for forms, date-fns for timestamps  
-**Storage**: Frontend-only: localStorage/sessionStorage for state persistence (authentication state, task list), no backend database in this phase  
-**Testing**: Vitest for unit tests (components, utilities), React Testing Library for component integration tests, optional Playwright for E2E (manual testing acceptable for MVP)  
-**Target Platform**: Modern web browsers (Chrome, Firefox, Safari, Edge - last 2 versions), desktop-first (minimum 1024px viewport width)  
-**Project Type**: Web application frontend (SPA with client-side routing), mock UI phase - no backend integration  
-**Performance Goals**: Page load <2s, component render <100ms, simulated polling updates every 3s without UI lag, form validation <50ms response  
-**Constraints**: Desktop-only (no mobile responsive required for MVP), English-only (no i18n), no accessibility compliance beyond semantic HTML, mock data only (no real file processing)  
-**Scale/Scope**: 6 main pages (Homepage, Login, Create Exam, Preview, Task Management, Exam Detail), ~30-40 reusable UI components, 5-stage simulated pipeline, 10-20 mock exam questions, support for 20+ task records with pagination
+**Primary Dependencies**: Next.js (framework), React (UI), @iconify/react (icons from Visily), Tailwind CSS (styling utility per Visily exports), Zustand or React Context (state management for mock data/auth)  
+**Storage**: localStorage for task persistence, sessionStorage for auth state (no backend/database)  
+**Testing**: Vitest (configured in frontend/vitest.config.ts), React Testing Library for component tests  
+**Target Platform**: Modern web browsers (Chrome, Firefox, Safari, Edge - last 2 versions), desktop-first minimum 1024px viewport  
+**Project Type**: Web application - frontend-only SPA with client-side routing and mock data simulation  
+**Performance Goals**: N/A for mock phase (simulated async operations use configurable timeouts 2-10s per stage)  
+**Constraints**: Desktop-only viewport ≥1024px, Vietnamese language only (no i18n), 6 Visily page designs MUST be matched exactly (shadows, radius, padding per page), no backend API calls (pure frontend state)  
+**Scale/Scope**: 6 pages (Homepage, Login, Create Exam, Preview, Task Management, Detail), 10-20 mock questions, unlimited mock tasks, bottom-up component architecture (tokens→atoms→molecules→organisms→templates→pages)
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-✅ **Principle I (Pipeline-First)**: N/A for this feature  
-This feature simulates the 5-stage pipeline (extract → understand → shuffle → generate) using frontend timers, but does not implement the real pipeline architecture. Real pipeline implementation deferred to future features.
+| Principle | Status | Evidence/Notes |
+|-----------|--------|----------------|
+| **I. Pipeline-First** | ✅ PASS | UI simulates 5-stage pipeline (extract→understand→shuffle→generate→complete) with clear stage transitions. FR-017 defines sequential stages. Task entity tracks current stage. |
+| **II. AI is Component** | ✅ N/A | No real AI in mock phase—simulated via timers. Backend integration in future will follow this principle. |
+| **III. Schema-First, Validation-Gated** | ✅ PASS | Entities defined (User, Task, ExamData, Question, TaskLog) with typed attributes. Form validation gates (FR-013, FR-014) prevent invalid submissions. TypeScript provides compile-time schema validation. **Phase 1 Validation**: data-model.md documents all TypeScript interfaces with validation rules, Zod schemas defined in research.md for runtime validation. |
+| **IV. Non-Text Content is Block+Ref** | ✅ N/A | Mock phase uses simple question text. Future: math/images will follow block architecture from 001-mvp-foundation. |
+| **V. Traceability & Provenance** | ✅ PASS | TaskLog entity (FR-021) captures stage transitions with timestamps. Logs displayed in Exam Detail (FR-038). Retry events logged (FR-041). **Phase 1 Validation**: data-model.md defines TaskLog with timestamp, stage, level, message fields. Vietnamese log messages documented in contracts/pages.md. |
+| **VI. Determinism After Normalization** | ✅ N/A | Shuffle/generate stages are simulated (no real logic). Future implementation will use seeds for reproducibility. |
+| **VII. Idempotent, Retryable Tasks** | ✅ PASS | Retry button (FR-040, FR-041) resets task to Pending and restarts pipeline. Debouncing prevents duplicate retries (FR-042). Task state transitions are clean (status enum). **Phase 1 Validation**: research.md documents state machine with clear transitions, data-model.md shows TaskStatus enum, contracts/pages.md specifies retry button behavior on Exam Detail page. |
+| **VIII. Separation of Content vs Rendering** | ✅ PASS | Design tokens centralized (FR-049: colors, fonts, spacing extracted from Visily). Components styled via tokens, not hardcoded values (FR-055, FR-056). Bottom-up architecture enforces reusability. **Phase 1 Validation**: research.md Section 1 extracts exact design tokens from Visily (purple #9a94de, Inter font, per-page spacing), contracts/pages.md preserves exact values per page per clarifications Q5. |
+| **IX. Unit Testing Mandatory** | ✅ PASS | Vitest configured (frontend/vitest.config.ts). NFR-005 requires TypeScript and React best practices. Test plan required in Phase 2 (tasks.md will include test tasks). **Phase 1 Validation**: research.md Section 6 documents Vitest + RTL testing strategy with example tests for atoms/molecules/organisms. |
 
-✅ **Principle II (AI is a Component, Not the Controller)**: N/A for this feature  
-No AI integration in this mock UI phase. AI understanding/analysis stages are simulated with mock data only.
-
-✅ **Principle III (Schema-First, Validation-Gated)**: PASS  
-TypeScript interfaces define strict schemas for mock data models (User, Task, ExamData, Question, TaskLog). Mock task status transitions follow defined enum values. Frontend validates form inputs before submission (FR-013, FR-014).
-
-✅ **Principle IV (Non-Text Content is Always Block + Reference)**: N/A for this feature  
-No real document content processing. Mock exam data uses simple text strings, not block-based architecture. Real block implementation deferred to future features.
-
-✅ **Principle V (Traceability & Provenance by Design)**: N/A for this feature  
-Mock data has no provenance requirements. Future: when real extraction is implemented, TaskLog entries will provide audit trail.
-
-✅ **Principle VI (Determinism After Normalization)**: N/A for this feature  
-No real shuffle/variant generation. Simulated processing uses configurable timers, not deterministic algorithms. Real determinism deferred to future features.
-
-✅ **Principle VII (Idempotent, Retryable Tasks)**: PASS  
-Simulated retry mechanism (FR-041) is idempotent: resets task to Pending, restarts from extract stage, logs retry event. Retry button is debounced/disabled during processing (FR-042) to prevent duplicate actions. Mock implementation prepares for real idempotent backend tasks.
-
-✅ **Principle VIII (Separation of Content vs Rendering)**: PASS (with future preparation)  
-UI components separate data (props) from presentation (rendering logic). Design tokens separate styling values from component implementation (NFR-011). This establishes pattern for future content/template separation.
-
-✅ **Principle IX (Unit Testing Mandatory)**: PASS  
-Component testing framework established (Vitest + React Testing Library). All reusable UI components require unit tests. Form validation logic requires tests. State management utilities require tests. Testing infrastructure enables TDD for future features.
-
-**Status**: ✅ **ALL APPLICABLE PRINCIPLES SATISFIED**  
-**Complexity Violations**: None
+**Post-Design Constitution Compliance**: ✅ **PASS** — All Phase 1 deliverables (research.md, data-model.md, contracts/pages.md) align with constitution principles. Design artifacts enforce schema-first validation (Principle III), content/rendering separation (Principle VIII), and testing requirements (Principle IX). Bottom-up component architecture documented in research.md prevents page-first violations. Vietnamese content extraction from Visily preserves traceability (Principle V).
 
 ## Project Structure
 
@@ -61,164 +45,66 @@ Component testing framework established (Vitest + React Testing Library). All re
 
 ```text
 specs/002-ui-mock-mvp/
-├── spec.md              # Feature specification (already created)
+├── spec.md              # Feature specification (input)
 ├── plan.md              # This file (/speckit.plan command output)
-├── research.md          # Phase 0 output (/speckit.plan command)
-├── data-model.md        # Phase 1 output (/speckit.plan command)
-├── quickstart.md        # Phase 1 output (/speckit.plan command)
-├── contracts/           # Phase 1 output (/speckit.plan command)
-│   └── components.md    # Component API contracts and props interfaces
-├── checklists/
-│   └── requirements.md  # Quality validation (already created)
-└── tasks.md             # Phase 2 output (/speckit.tasks command - NOT created by /speckit.plan)
+├── research.md          # Phase 0 output (design system extraction from Visily)
+├── data-model.md        # Phase 1 output (frontend entities/types)
+├── quickstart.md        # Phase 1 output (local dev setup)
+├── contracts/           # Phase 1 output (component API contracts)
+│   ├── components.md    # Atomic design component hierarchy
+│   └── pages.md         # Page-level contracts with routing
+└── tasks.md             # Phase 2 output (/speckit.tasks command - NOT created yet)
 ```
 
 ### Source Code (repository root)
 
 ```text
-frontend/                          # Existing Next.js 14 project from 001-mvp-foundation
+frontend/                              # Next.js application (this feature)
 ├── src/
-│   ├── app/                       # Next.js 14 App Router (pages)
-│   │   ├── (auth)/                # Auth route group
-│   │   │   └── login/
-│   │   │       └── page.tsx       # Login page (US2)
-│   │   ├── dashboard/
-│   │   │   └── page.tsx           # Homepage/Dashboard (US1)
-│   │   ├── exams/
-│   │   │   ├── create/
-│   │   │   │   └── page.tsx       # Create Exam form (US3)
-│   │   │   ├── preview/
-│   │   │   │   └── [taskId]/
-│   │   │   │       └── page.tsx   # Preview Analysis (US4)
-│   │   │   └── [taskId]/
-│   │   │       └── page.tsx       # Exam Detail (US6)
-│   │   ├── tasks/
-│   │   │   └── page.tsx           # Task Management (US5)
-│   │   ├── guide/
-│   │   │   └── page.tsx           # User Guide (static content)
-│   │   ├── page.tsx               # Root homepage redirect
-│   │   ├── layout.tsx             # Root layout with Navbar
-│   │   └── globals.css            # Global styles, Tailwind imports
-│   │
-│   ├── components/                # UI components (atomic design)
-│   │   ├── design-system/         # **PHASE 1: Design Foundations**
-│   │   │   ├── tokens.ts          # Design tokens (colors, spacing, typography, etc.)
-│   │   │   └── theme.ts           # Theme configuration
-│   │   │
-│   │   ├── ui/                    # **PHASE 2: Core UI Elements (Atoms)**
-│   │   │   ├── Button.tsx
-│   │   │   ├── Input.tsx
-│   │   │   ├── Select.tsx
-│   │   │   ├── Textarea.tsx
-│   │   │   ├── Checkbox.tsx
-│   │   │   ├── Badge.tsx
-│   │   │   ├── Avatar.tsx
-│   │   │   ├── Icon.tsx
-│   │   │   ├── ProgressBar.tsx
-│   │   │   └── Spinner.tsx
-│   │   │
-│   │   ├── shared/                # **PHASE 3: Shared Components (Molecules/Organisms)**
-│   │   │   ├── Card.tsx
-│   │   │   ├── Modal.tsx
-│   │   │   ├── Datatable.tsx
-│   │   │   ├── FormField.tsx      # Label + Input + Error wrapper
-│   │   │   ├── StatusBadge.tsx    # Specialized badge with color mapping
-│   │   │   ├── LogViewer.tsx
-│   │   │   └── FileUpload.tsx
-│   │   │
-│   │   ├── layout/                # **PHASE 4: App Layout Structure**
-│   │   │   ├── Navbar.tsx         # Adaptive navbar (US1, US2)
-│   │   │   ├── Sidebar.tsx        # Optional sidebar
-│   │   │   ├── PageContainer.tsx  # Consistent page wrapper
-│   │   │   └── AuthGuard.tsx      # Authentication check wrapper
-│   │   │
-│   │   ├── sections/              # **PHASE 5: Feature-Level Sections (Organisms)**
-│   │   │   ├── ExamMetadata.tsx   # Display exam metadata (US6)
-│   │   │   ├── ProcessingStatus.tsx # Display status, progress, logs (US6)
-│   │   │   ├── QuestionList.tsx   # Display question list (US4, US6)
-│   │   │   ├── TaskSummaryCard.tsx # Task row in datatable (US5)
-│   │   │   ├── CreateExamForm.tsx # Full form for exam creation (US3)
-│   │   │   └── ProcessingModal.tsx # Modal for processing stages (US4)
-│   │   │
-│   │   └── pages/                 # **PHASE 6: Page-Level Components** (if needed)
-│   │       └── (Page-specific components that don't fit elsewhere)
-│   │
-│   ├── lib/                       # **PHASE 7: Mock Data, State, Utilities**
-│   │   ├── mock-data/
-│   │   │   ├── users.ts           # Mock user data
-│   │   │   ├── tasks.ts           # Mock task data
-│   │   │   └── questions.ts       # Mock exam questions (10-20 questions)
-│   │   ├── state/
-│   │   │   ├── auth-store.ts      # Authentication state (Zustand/Context)
-│   │   │   ├── task-store.ts      # Task management state
-│   │   │   └── storage.ts         # localStorage/sessionStorage utilities
-│   │   ├── simulation/
-│   │   │   ├── pipeline.ts        # Simulated processing pipeline with timers
-│   │   │   ├── polling.ts         # Polling logic and intervals
-│   │   │   └── oauth.ts           # Simulated OAuth flow
-│   │   └── utils/
-│   │       ├── validation.ts      # Form validation utilities
-│   │       ├── formatters.ts      # Date, progress formatting
-│   │       └── constants.ts       # Enums, constants
-│   │
-│   ├── types/                     # **TypeScript types and interfaces**
-│   │   ├── user.ts                # User interface
-│   │   ├── task.ts                # Task, TaskLog interfaces
-│   │   ├── exam.ts                # ExamData, Question interfaces
-│   │   └── index.ts               # Re-exports
-│   │
-│   └── hooks/                     # **PHASE 8: Custom React hooks**
-│       ├── useAuth.ts             # Authentication state hook
-│       ├── useTaskPolling.ts      # Polling hook (US5, US6)
-│       ├── useSimulation.ts       # Processing simulation hook
-│       └── useLocalStorage.ts     # localStorage persistence hook
-│
-├── tests/
-│   ├── setup.ts
-│   ├── unit/
-│   │   ├── components/            # Component unit tests
-│   │   └── utils/                 # Utility function tests
-│   └── e2e/                       # Optional E2E tests (Playwright)
-│       └── task-lifecycle.spec.ts
-│
-├── public/
-│   └── (Static assets, images, icons)
-│
-├── package.json
-├── tsconfig.json
-├── tailwind.config.js
-├── next.config.js
-└── vitest.config.ts
-```
-
-**Structure Decision**: **Frontend-only implementation** expanding the existing Next.js 14 project from feature 001-mvp-foundation. Architecture follows **atomic design principles** with strict separation of concerns: design tokens → atoms → molecules → organisms → templates → pages. This bottom-up approach ensures all UI components are reusable, testable, and ready for future backend integration. Mock data and simulation logic are isolated in `lib/` directory for easy replacement with real API calls in Phase 2. State management uses Zustand (or React Context) with localStorage persistence to simulate backend sessions. No backend code changes required for this feature - purely frontend scaffold.
-
-## Complexity Tracking
-
-> **Fill ONLY if Constitution Check has violations that must be justified**
-
-N/A - All applicable constitutional principles are satisfied. No complexity violations to track.
+│   ├── app/                          # Next.js App Router pages
+│   │   ├── page.tsx                  # Homepage (US1)
+│   │   ├── login/                    # Login page (US2)
+│   │   ├── create-exam/              # Create Exam form (US3)
+│   │   ├── preview/                  # Preview Analysis (US4 - confirmation)
+│   │   ├── tasks/                    # Task Management list (US5)
+│   │   └── tasks/[id]/               # Exam Detail view (US6)
 │   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
+│   │   ├── ui/                       # Atomic components (Button, Input, Badge, etc.)
+│   │   ├── layout/                   # Navbar, PageLayout, Footer
+│   │   ├── forms/                    # FormField, ExamForm
+│   │   └── features/                 # ExamMetadata, ProcessingStatus, QuestionList
+│   ├── lib/
+│   │   ├── design-tokens.ts          # Visily-extracted colors, fonts, spacing
+│   │   ├── types.ts                  # User, Task, ExamData, Question, TaskLog
+│   │   └── utils.ts                  # Helpers, formatters
+│   ├── stores/                       # Zustand stores or React Context providers
+│   │   ├── authStore.ts              # Mock user session, authentication state
+│   │   └── taskStore.ts              # Task list, CRUD operations, polling logic
+│   └── mocks/
+│       ├── userData.ts               # Mock Trieu Kiem user with Vietnamese data
+│       └── examData.ts               # Mock questions (10-20) in Vietnamese
+├── public/
+│   └── assets/                       # Copied from html/ Visily exports
+│       └── IMG_1.webp                # Trieu Kiem avatar
+├── tests/
+│   ├── unit/                         # Component unit tests (Vitest + RTL)
+│   └── integration/                  # Page integration tests
+├── package.json                      # Dependencies: @iconify/react, zustand, etc.
+└── vitest.config.ts                  # Test configuration
 
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+backend/                               # Not modified in this feature (existing 001-mvp)
+infra/                                 # Not modified in this feature
+html/                                  # Visily design exports (READ-ONLY reference)
+├── SiroMix - Homepage/
+├── SiroMix - Login Screen/
+├── SiroMix- Create New Exam/
+├── SiroMix - Task Management/
+├── SiroMix - Exam Detail/
+└── SiroMix - Exam Analysis Result/
 ```
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+**Structure Decision**: Web application (frontend + backend) structure already established by 001-mvp-foundation feature. This feature exclusively modifies `frontend/` directory following Next.js App Router conventions with bottom-up component organization (ui atoms → layout molecules → feature organisms → page templates). The `html/` folder serves as read-only design reference (Visily exports) for extracting exact styling values per clarifications. All 6 Visily page exports map 1:1 to Next.js app routes (SiroMix - Homepage → app/page.tsx, SiroMix - Login Screen → app/login/page.tsx, etc.).
 
 ## Complexity Tracking
 
-> **Fill ONLY if Constitution Check has violations that must be justified**
-
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+**Not Applicable** — No constitution violations detected. Feature complies with all SiroMix architectural principles. Bottom-up component architecture enforced via functional requirements (FR-048 through FR-056) prevents unnecessary complexity. Mock phase simplicity (no backend, no real AI) keeps scope minimal.

@@ -204,12 +204,12 @@ A user wants to view comprehensive details about a specific exam processing task
 #### Mock Data & State Management
 - **FR-044**: System MUST use frontend state management (React Context, Redux, Zustand, or similar) to store: authentication state, user data, task list, individual task details
 - **FR-045**: System MUST persist critical state (authentication, task list) using localStorage or sessionStorage to survive page refreshes
-- **FR-046**: System MUST provide configurable mock data: mock user (name, email, avatar), mock exam questions (10-20 questions with options and correct answers)
+- **FR-046**: System MUST provide configurable mock data: mock user "Trieu Kiem" with Vietnamese email (e.g., "trieu.kiem@university.edu") and avatar from Visily assets (./assets/IMG_1.webp), mock exam questions (10-20 questions with options and correct answers in Vietnamese)
 - **FR-047**: System MUST simulate random or configurable processing durations per stage (2-10 seconds per stage, configurable for testing)
 
 #### UI Implementation Architecture
 - **FR-048**: Implementation planning MUST follow bottom-up order: Design Foundations → Core UI Elements → Shared Components → App Layout → Feature Sections → Pages → Mock Data/State → Integration Layer
-- **FR-049**: Design Foundations phase MUST establish design tokens first: colors, typography scales, spacing units, border radius values, shadow definitions, breakpoints derived from Visily designs
+- **FR-049**: Design Foundations phase MUST establish design tokens first: primary brand color #9a94de (purple), text colors #171a1f (dark), #565d6d (gray), border color #dee1e6, typography (Inter font family), spacing units, border radius values, shadow definitions, breakpoints derived from Visily designs. All UI text MUST be in Vietnamese matching Visily exports exactly.
 - **FR-050**: Core UI Elements phase MUST implement atomic components before composite components: Button, Input, Select, Textarea, Checkbox, Badge, Avatar, Icon components with variants
 - **FR-051**: Shared UI Components phase MUST build reusable compound components: Card, Modal, Datatable, Form Field wrappers, Progress Bar, Status Badge, Log Viewer before any page implementation
 - **FR-052**: App Layout Structure phase MUST implement navigation shell and routing before feature pages: Navbar (with auth state), Sidebar (if applicable), Page layout container, Route configuration
@@ -217,10 +217,12 @@ A user wants to view comprehensive details about a specific exam processing task
 - **FR-054**: Page-Level Implementation phase MUST compose pages from sections and shared components, not create new one-off UI elements
 - **FR-055**: Implementation MUST ensure all UI components are reusable, theme-able via design tokens, and documented with usage examples for scalability
 - **FR-056**: Visual consistency MUST be enforced: all components use design tokens (no hardcoded colors/spacing), follow naming conventions, maintain consistent API patterns
+- **FR-057**: Icon implementation MUST use @iconify/react library for standard icons (search, calendar, download, chevron, etc.) and extract custom SiroMix layered logo as dedicated SVG React component for brand consistency
+- **FR-058**: Implementation MUST preserve exact Visily-exported values per page: shadows (e.g., shadow-sm vs custom shadow values), border radius (rounded-md vs rounded-[10px] vs rounded-xl), container padding variations (px-4 lg:px-[144px] vs lg:px-[120px] vs lg:px-36). Each page's styling MUST match its corresponding HTML export file exactly to maintain original design intent.
 
 ### Key Entities
 
-- **User (Mock)**: Represents authenticated user. Attributes: user_id (auto-generated), name (mock: "John Doe"), email (mock: "john.doe@example.com"), avatar_url (mock image URL), authentication_status (boolean).
+- **User (Mock)**: Represents authenticated user. Attributes: user_id (auto-generated), name (mock: "Trieu Kiem"), email (mock: "trieu.kiem@university.edu"), avatar_url (mock image from Visily assets: ./assets/IMG_1.webp), authentication_status (boolean).
 
 - **Task**: Represents exam processing job. Attributes: task_id (UUID or integer), user_id (FK to user), exam_metadata (object: academic_year, exam_name, subject, duration_minutes, num_versions, notes, uploaded_filename), status (enum: Pending/Extracting/Understanding/Awaiting Confirmation/Shuffling/Generating/Completed/Failed), progress (integer 0-100), logs (array of log entries), created_at (timestamp), updated_at (timestamp).
 
@@ -250,10 +252,10 @@ A user wants to view comprehensive details about a specific exam processing task
 ## Assumptions *(optional)*
 
 - Frontend framework will be Next.js (React) with TypeScript (consistent with existing 001-mvp-foundation feature)
-- Visily exported HTML from `./html/` directory will serve as visual reference but will be converted to React components (not used directly)
+- Visily exported HTML from `./html/` directory serves as exact design specification - implementation must convert HTML/CSS/React files from Visily into reusable React components while preserving exact styling values (shadows, border radius, padding) per page as shown in exports
 - **Implementation follows bottom-up approach**: design tokens and atomic components built first, then composed into pages (not page-first development)
 - **Planning phase will structure implementation in 9 phases**: (1) Design Foundations (tokens), (2) Core UI Elements (atoms), (3) Shared Components (molecules), (4) App Layout, (5) Feature Sections (organisms), (6) Pages (templates), (7) Mock Data/State, (8) Interactions, (9) Integration Layer
-- Design system will be created from Visily designs through token extraction (colors, typography, spacing) before any component implementation
+- Design system will be created from Visily designs through token extraction (brand color #9a94de, text colors #171a1f/#565d6d, border #dee1e6, Inter font, etc.) with page-specific styling preserved exactly as exported
 - Mock OAuth does not require Google API credentials or real OAuth2 configuration
 - File upload simulation uses HTML file input with client-side validation only (no actual file processing or server upload)
 - Simulated processing stages use JavaScript timers (setTimeout/setInterval) with configurable durations (default 5 seconds per stage)
@@ -263,9 +265,9 @@ A user wants to view comprehensive details about a specific exam processing task
 - Task data is stored in frontend state only (no real database or API calls in this phase)
 - Download functionality can be mocked with alert/console message or downloading a placeholder PDF/text file
 - User Guide page can be a simple static content page or link to external documentation
-- Avatar images can use placeholder services (e.g., UI Avatars, Gravatar, or static placeholder image)
+- Avatar images sourced from Visily assets folder (./assets/IMG_1.webp for Trieu Kiem user)
 - No responsive mobile design required for MVP (desktop-first, minimum 1024px viewport width)
-- No internationalization required (English only)
+- All UI text and content must be in Vietnamese matching Visily exports exactly (no internationalization or English fallbacks)
 - Browser support: modern browsers only (Chrome, Firefox, Safari, Edge - last 2 versions)
 
 ## Non-Functional Requirements *(optional)*
@@ -312,3 +314,14 @@ This feature explicitly excludes:
 - Export features beyond simulated download button
 - Collaborative editing or multi-user concurrent access
 - Offline support or Progressive Web App (PWA) capabilities
+
+## Clarifications
+
+### Session 2026-03-10
+
+- Q: What is the primary brand color for SiroMix? → A: Purple brand: #9a94de (primary), #171a1f (text-dark), #565d6d (text-gray), #dee1e6 (borders) — extracted from Visily. Layout must follow all HTML folder designs per page.
+- Q: What language should the UI use? → A: Vietnamese — Use Vietnamese for all UI text, buttons, labels, messages matching Visily exports exactly. The implementation must convert HTML/CSS/React files from Visily into a proper design system based on what exists in the html/ directory.
+- Q: Which mock user should the application use? → A: Use Visily user: "Trieu Kiem", Vietnamese email (e.g., "trieu.kiem@university.edu"), avatar from Visily assets (./assets/IMG_1.webp).
+- Q: How should icons be implemented? → A: Use @iconify/react library for standard icons (search, calendar, download, etc.) + extract only custom SiroMix layered logo as dedicated SVG component for brand consistency.
+- Q: Should the design system normalize inconsistent values or preserve each page's unique styling? → A: Preserve exact Visily values per page — Keep all exported values exactly as designed (shadows, border radius, container padding variations). Follow each page's Visily export precisely to maintain design intent.
+- **Note**: html/ folder structure confirmed — Each subdirectory represents one application page with complete design export: "SiroMix - Homepage" → Homepage, "SiroMix - Login Screen" → Login page, "SiroMix- Create New Exam" → Create exam form, "SiroMix - Task Management" → Task list view, "SiroMix - Exam Detail" → Task detail view, "SiroMix - Exam Analysis Result" → Preview analysis page. Total: 6 page designs mapping to 6 user stories (US1-US6).

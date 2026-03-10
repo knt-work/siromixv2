@@ -40,9 +40,12 @@
 
 ### Design Foundations (BLOCKS EVERYTHING)
 
-- [X] T008 Create design tokens file in frontend/src/components/design-system/tokens.ts with exported colors (primary, gray, status, success, warning, error), typography (fontFamily, fontSize, fontWeight, lineHeight), spacing (xs to 3xl), borderRadius, shadows per research.md
-- [X] T009 Extend tailwind.config.js theme to use tokens from frontend/src/components/design-system/tokens.ts
-- [X] T010 [P] Create theme configuration file in frontend/src/components/design-system/theme.ts with Tailwind theme extensions
+- [X] T008 Create design tokens file in frontend/src/lib/design-tokens.ts with exact Visily values per clarifications: colors (brand primary #9a94de, text dark #171a1f, text gray #565d6d, border #dee1e6, status success #39a85e, warning #fcb831, error #d3595e), typography (Inter font family, weights 400/500/600/700, letter-spacing -0.02em for headings), spacing (per-page variations: Homepage px-[144px], Create px-36, Tasks px-32, Detail px-[120px]), shadows (shadow-sm, custom card shadow, auth-card-shadow), border radius (rounded-md for inputs, rounded-[10px] for cards, rounded-xl for large cards, rounded-full for avatars)
+- [X] T009 Extend tailwind.config.js theme to use tokens from frontend/src/lib/design-tokens.ts, configure purple #9a94de as primary color, Inter as font family
+- [X] T010 [P] Create custom CSS file in frontend/src/styles/custom.css with Visily-specific classes: custom-dashed-border (SVG data URI for file upload), custom-scrollbar (5-6px width, #e5e7eb thumb), hide-scrollbar (MS/webkit), step-line-active (green gradient), log-container (tabular-nums font feature), auth-card-shadow
+- [X] T010a [P] Copy Visily assets from html/SiroMix - Homepage/assets/IMG_1.webp to frontend/public/assets/IMG_1.webp for Trieu Kiem avatar
+- [X] T010b [P] Create Vietnamese content constants file in frontend/src/constants/content.ts with ui text extracted from Visily exports: buttons (Đăng nhập, Tạo đề mới, Xác nhận, Thử lại, Tải xuống), labels (Tên kì thi, Môn học, Thời gian (phút), Số đề cần trộn), messages (Đã bắt đầu xử lý đề thi, Xem trước kết quả phân tích), status (Chờ xử lý, Đang trích xuất, Đang phân tích, Hoàn thành, Thất bại), hero headlines, form placeholders
+- [X] T010c [P] Create SiroMix logo SVG component in frontend/src/components/ui/SiroMixLogo.tsx by extracting 3-layer logo SVG from any Visily App.tsx export (identical across all pages), accept className prop for sizing
 
 ### TypeScript Types (BLOCKS DATA FLOW)
 
@@ -62,22 +65,22 @@
 
 ### Mock Data (BLOCKS TESTING)
 
-- [X] T021 [P] Create mock user data in frontend/src/lib/mock-data/users.ts per data-model.md (mockUser with user_id: 'mock-user-1', email: 'john.doe@university.edu', full_name: 'John Doe', avatar_url, role: 'professor')
-- [X] T022 [P] Create mock questions array in frontend/src/lib/mock-data/questions.ts with 15 sample questions per data-model.md (question_text, options A/B/C/D, correct_answer, learning_objective)
+- [X] T021 [P] Create mock user data in frontend/src/lib/mock-data/users.ts per clarifications: mockUser with user_id: 'mock-user-1', name: 'Trieu Kiem', email: 'trieu.kiem@university.edu', avatar_url: '/assets/IMG_1.webp' (from Visily assets), role: 'professor'
+- [X] T022 [P] Create mock questions array in frontend/src/lib/mock-data/questions.ts with 15-20 sample questions in Vietnamese per clarifications (question_text: "Thủ đô của Việt Nam là gì?", options A/B/C/D in Vietnamese, correct_answer, learning_objective)
 - [X] T023 [P] Create task factory function in frontend/src/lib/mock-data/tasks.ts (createMockTask accepting ExamMetadata and userId, returns Task with generated task_id, status: 'pending', progress: 0)
 
 ### Simulation Logic (BLOCKS PROCESSING FLOWS)
 
-- [X] T024 Create pipeline simulation module in frontend/src/lib/simulation/pipeline.ts with stage durations (extract: 5s, understand: 5s, shuffle: 5s, generate: 5s) and progress mapping per research.md (pending: 0%, extracting: 12%, understanding: 37%, awaiting: 50%, shuffling: 62%, generating: 87%, completed: 100%)
-- [X] T025 Create simulateStage async function in frontend/src/lib/simulation/pipeline.ts that waits for stage duration then calls onProgress callback with taskId, status, progress
-- [X] T026 [P] Create OAuth simulation module in frontend/src/lib/simulation/oauth.ts with simulateGoogleOAuth function (1-2 second delay, returns mockUser)
-- [X] T027 [P] Create polling utility in frontend/src/lib/simulation/polling.ts with configurable interval (default 3s) and cleanup logic
+- [X] T024 Create pipeline simulation module in frontend/src/lib/simulation/pipeline.ts with stage durations (extract: 5s, understand: 5s, shuffle: 5s, generate: 5s) and progress mapping per research.md (pending: 0%, extracting: 12%, understanding: 37%, awaiting: 50%, shuffling: 62%, generating: 87%, completed: 100%), Vietnamese log messages for each stage ("Bắt đầu trích xuất dữ liệu", "Đang phân tích câu hỏi", "Đang trộn đề thi", "Đang tạo file đề thi", "Hoàn thành")
+- [X] T025 Create simulateStage async function in frontend/src/lib/simulation/pipeline.ts that waits for stage duration then calls onProgress callback with taskId, status, progress, adds Vietnamese log entry to task.logs array with timestamp and stage name, persists updated task to taskStore
+- [X] T026 [P] Create OAuth simulation module in frontend/src/lib/simulation/oauth.ts with simulateGoogleOAuth function (1-2 second delay, returns mockUser with Trieu Kiem data from mock-data/users.ts)
+- [X] T027 [P] Create polling utility in frontend/src/lib/simulation/polling.ts with configurable interval (default 3s) and cleanup logic, only polls tasks with processing statuses (extracting, understanding, shuffling, generating), auto-stops when task reaches completed/failed/awaiting
 
 ### Validation & Utilities (BLOCKS FORMS)
 
-- [X] T028 [P] Create Zod validation schema in frontend/src/lib/validation/create-exam-schema.ts per research.md (academicYear, examName, subject, duration > 0, numVersions 1-10, notes optional, file .doc/.docx validation)
-- [X] T029 [P] Create date formatter utilities in frontend/src/lib/utils/formatters.ts (formatDate, formatTimestamp, formatRelativeTime using date-fns)
-- [X] T030 [P] Create constants file in frontend/src/lib/utils/constants.ts with TaskStatus enum, LogLevel enum, default values (POLLING_INTERVAL: 3000, PAGE_SIZE: 10)
+- [X] T028 [P] Create Zod validation schema in frontend/src/lib/validation/create-exam-schema.ts per research.md (academicYear, examName, subject, duration > 0, numVersions 1-10, notes optional, file .doc/.docx validation, Vietnamese error messages: "Vui lòng điền tên kì thi", "Thời gian phải lớn hơn 0", "Số đề phải từ 1 đến 10", "Chỉ chấp nhận file .doc hoặc .docx")
+- [X] T029 [P] Create date formatter utilities in frontend/src/lib/utils/formatters.ts (formatDate using Vietnamese locale vi-VN, formatTimestamp, formatRelativeTime using date-fns with Vietnamese relative time "X phút trước", "X giờ trước", "X ngày trước")
+- [X] T030 [P] Create constants file in frontend/src/lib/utils/constants.ts with TaskStatus enum with Vietnamese values, LogLevel enum, default values (POLLING_INTERVAL: 3000, PAGE_SIZE: 10), all Vietnamese status constants mapping to status enum ("Chờ xử lý": "pending", "Đang trích xuất": "extracting", etc.)
 
 ### Testing Infrastructure (BLOCKS TEST EXECUTION)
 
@@ -96,20 +99,21 @@
 
 ### Implementation for User Story 1
 
-- [ ] T033 [P] [US1] Create Button atom in frontend/src/components/ui/Button.tsx per contracts/components.md (variants: primary, secondary, outline, ghost, danger; sizes: sm, md, lg; isLoading, leftIcon, rightIcon, fullWidth props)
-- [ ] T034 [P] [US1] Create Avatar atom in frontend/src/components/ui/Avatar.tsx (src, alt, size props, fallback to initials, rounded-full styling)
-- [ ] T035 [US1] Create Navbar template in frontend/src/components/layout/Navbar.tsx per contracts/components.md (user, onLogin, onLogout props, conditional rendering based on auth state, sticky top-0, displays logo/branding left, auth UI right)
-- [ ] T036 [US1] Create PageContainer template in frontend/src/components/layout/PageContainer.tsx per contracts/components.md (title, subtitle, breadcrumbs, actions, children, maxWidth props, centered layout with responsive padding)
-- [ ] T037 [US1] Create root layout in frontend/src/app/layout.tsx importing Navbar with auth store integration, wrapping children with global styles
-- [ ] T038 [US1] Create homepage in frontend/src/app/page.tsx using PageContainer, displaying product introduction text, three CTA buttons (Login, Create New Exam, User Guide) with onClick navigation
-- [ ] T039 [P] [US1] Create User Guide page in frontend/src/app/guide/page.tsx with static content explaining SiroMix features and workflow
-- [ ] T040 [US1] Integrate auth check logic on Create New Exam button click in frontend/src/app/page.tsx (redirect to /login if not authenticated, else redirect to /exams/create)
+- [X] T033 [P] [US1] Create Button atom in frontend/src/components/ui/Button.tsx per contracts/components.md with purple #9a94de brand color for primary variant (variants: primary, secondary, outline, ghost, danger; sizes: sm, md, lg; isLoading, leftIcon, rightIcon, fullWidth props), all text in Vietnamese per content constants
+- [X] T034 [P] [US1] Create Avatar atom in frontend/src/components/ui/Avatar.tsx (src, alt, size props, fallback to initials, rounded-full styling, uses Trieu Kiem avatar /assets/IMG_1.webp)
+- [X] T034a [P] [US1] Create Icon wrapper component in frontend/src/components/ui/Icon.tsx using @iconify/react per clarifications, accepts icon name prop (e.g., "lucide:search", "lucide:calendar", "lucide:download"), size, color, className
+- [X] T035 [US1] Create Navbar template in frontend/src/components/layout/Navbar.tsx per contracts/pages.md with exact Visily styling (padding px-4 lg:px-32, border bottom #dee1e6, sticky top-0), displays SiroMixLogo component left, Login button or Avatar right based on auth state, Vietnamese text "Đăng nhập" for login button
+- [X] T036 [US1] Create PageContainer template in frontend/src/components/layout/PageContainer.tsx per contracts/components.md (title, subtitle, breadcrumbs, actions, children, maxWidth props, uses exact Visily per-page padding from contracts/pages.md)
+- [X] T037 [US1] Create root layout in frontend/src/app/layout.tsx importing Navbar with auth store integration, Inter font from Google Fonts, wrapping children with global styles, importing custom.css
+- [X] T038 [US1] Create homepage in frontend/src/app/page.tsx per contracts/pages.md with exact Visily styling (padding px-4 lg:px-[144px], radial gradient background from-[#9a94de]/10), displaying Vietnamese headline "Trộn đề thi nhanh chóng với SiroMix", three CTA buttons using Vietnamese content constants, feature checklist with check icons from @iconify/react (Icon icon="lucide:check-circle")
+- [X] T039 [P] [US1] Create User Guide page in frontend/src/app/guide/page.tsx with static Vietnamese content explaining SiroMix features and workflow
+- [X] T040 [US1] Integrate auth check logic on Create New Exam button click in frontend/src/app/page.tsx (redirect to /login if not authenticated, else redirect to /exams/create)
 
 ### Tests for User Story 1
 
-- [ ] T041 [P] [US1] Unit tests for Button component in frontend/tests/unit/components/ui/Button.test.tsx (test variants, sizes, loading state, icon rendering, onClick handler, disabled state)
-- [ ] T042 [P] [US1] Unit tests for Navbar component in frontend/tests/unit/components/layout/Navbar.test.tsx (test unauthenticated state shows Login button, authenticated state shows avatar, onLogin/onLogout callbacks)
-- [ ] T043 [P] [US1] Integration test for homepage navigation flow in frontend/tests/integration/homepage.test.tsx (test CTA button clicks navigate to correct routes, auth-gated navigation redirects to login)
+- [X] T041 [P] [US1] Unit tests for Button component in frontend/tests/unit/components/ui/Button.test.tsx (test variants, sizes, loading state, icon rendering, onClick handler, disabled state)
+- [X] T042 [P] [US1] Unit tests for Navbar component in frontend/tests/unit/components/layout/Navbar.test.tsx (test unauthenticated state shows Login button, authenticated state shows avatar, onLogin/onLogout callbacks)
+- [X] T043 [P] [US1] Integration test for homepage navigation flow in frontend/tests/integration/homepage.test.tsx (test CTA button clicks navigate to correct routes, auth-gated navigation redirects to login)
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - homepage loads, navigation works, auth-aware UI renders correctly
 
@@ -123,17 +127,17 @@
 
 ### Implementation for User Story 2
 
-- [ ] T044 [P] [US2] Create Spinner atom in frontend/src/components/ui/Spinner.tsx per contracts/components.md (size: sm, md, lg, xl; variant: primary, white, gray; CSS spin animation)
-- [ ] T045 [US2] Create login page in frontend/src/app/login/page.tsx displaying simulated OAuth consent/loading screen, calling simulateGoogleOAuth from lib/simulation/oauth.ts, then calling authStore.login(mockUser) and redirecting to original destination or homepage
-- [ ] T046 [US2] Create AuthGuard template in frontend/src/components/layout/AuthGuard.tsx per contracts/components.md (children, fallback, redirectTo props, checks authStore.isAuthenticated, renders children if true, otherwise shows fallback or redirects)
-- [ ] T047 [US2] Update Navbar in frontend/src/components/layout/Navbar.tsx to add avatar dropdown menu with Logout option when user clicks avatar
-- [ ] T048 [US2] Implement auth state hydration in frontend/src/app/layout.tsx using authStore.checkAuth() in useEffect to restore session from localStorage on app load
-- [ ] T049 [US2] Add redirect destination tracking in authStore (frontend/src/lib/state/auth-store.ts) to store intended URL before login redirect, restore after successful auth
+- [ ] T044 [P] [US2] Create Spinner atom in frontend/src/components/ui/Spinner.tsx per contracts/components.md (size: sm, md, lg, xl; variant: primary using purple #9a94de, white, gray; CSS spin animation)
+- [ ] T045 [US2] Create login page in frontend/src/app/login/page.tsx per contracts/pages.md with exact Visily styling (centered card max-w-[560px], rounded-xl border-radius, shadow-[0px_10px_25px_rgba(23, 26, 31, 0.08)] auth-card-shadow, border 1px solid #dee1e6), displaying SiroMixLogo component, Vietnamese heading "Đăng nhập vào SiroMix", Google OAuth button with Google logo SVG and text "Đăng nhập bằng Google", calling simulateGoogleOAuth from lib/simulation/oauth.ts with 1-2s delay, then calling authStore.login(mockUser) with Trieu Kiem data, redirecting to original destination or homepage
+- [ ] T046 [US2] Create AuthGuard template in frontend/src/components/layout/AuthGuard.tsx per contracts/components.md (children, fallback, redirectTo props, checks authStore.isAuthenticated, renders children if true, otherwise shows fallback or redirects to /login)
+- [ ] T047 [US2] Update Navbar in frontend/src/components/layout/Navbar.tsx to add avatar dropdown menu with Vietnamese "Đăng xuất" Logout option when user clicks Trieu Kiem avatar, dropdown styled with shadow-sm, border #dee1e6, rounded-md, Vietnamese user name displayed "Trieu Kiem", logout icon from @iconify "lucide:log-out", onClick calls authStore.logout() and redirects to /login
+- [ ] T048 [US2] Implement auth state hydration in frontend/src/app/layout.tsx using authStore.checkAuth() in useEffect to restore Trieu Kiem session from sessionStorage on app load, validate token expiry if using JWT (mock for now), set isAuthenticated true if valid session exists
+- [ ] T049 [US2] Add redirect destination tracking in authStore (frontend/src/lib/state/auth-store.ts) to store intended URL before login redirect (e.g., user visits /exams/create without auth → store "/exams/create" → redirect to /login → after successful login → navigate to stored "/exams/create"), use sessionStorage for persistence
 
 ### Tests for User Story 2
 
-- [ ] T050 [P] [US2] Unit tests for AuthGuard component in frontend/tests/unit/components/layout/AuthGuard.test.tsx (test renders children when authenticated, shows fallback when not authenticated, redirects when redirectTo prop provided)
-- [ ] T051 [P] [US2] Integration test for login flow in frontend/tests/integration/auth-flow.test.tsx (test clicking Login starts OAuth simulation, successful login updates auth state, avatar appears in navbar, logout clears state)
+- [ ] T050 [P] [US2] Unit tests for AuthGuard component in frontend/tests/unit/components/layout/AuthGuard.test.tsx (test renders children when authStore.isAuthenticated true, shows fallback when false, redirects to /login when redirectTo prop provided, stores redirect destination in authStore)
+- [ ] T051 [P] [US2] Integration test for login flow in frontend/tests/integration/auth-flow.test.tsx (test clicking Vietnamese "Đăng nhập" button navigates to /login page, Vietnamese heading "Đăng nhập vào SiroMix" renders, clicking "Đăng nhập bằng Google" starts OAuth simulation with 1-2s delay, successful login updates authStore with Trieu Kiem user, Navbar updates to show Trieu Kiem avatar /assets/IMG_1.webp, clicking avatar shows dropdown with Vietnamese "Đăng xuất", clicking logout clears authStore and redirects to /login, auth hydration restores Trieu Kiem from sessionStorage on page reload)
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently - users can authenticate and see persistent auth state
 
@@ -147,23 +151,23 @@
 
 ### Implementation for User Story 3
 
-- [ ] T052 [P] [US3] Create Input atom in frontend/src/components/ui/Input.tsx per contracts/components.md (variant: default, filled, outlined; size: sm, md, lg; hasError, leftIcon, rightIcon, fullWidth props)
-- [ ] T053 [P] [US3] Create Select atom in frontend/src/components/ui/Select.tsx (options, value, onChange, hasError, placeholder props, styled to match Input)
-- [ ] T054 [P] [US3] Create Textarea atom in frontend/src/components/ui/Textarea.tsx (rows, hasError props, extends HTMLTextAreaElement, styled to match Input)
-- [ ] T055 [P] [US3] Create Checkbox atom in frontend/src/components/ui/Checkbox.tsx (checked, onChange, label, disabled props, accessible with label click)
-- [ ] T056 [US3] Create FormField molecule in frontend/src/components/shared/FormField.tsx per contracts/components.md (label, htmlFor, required, error, helperText, children props, wraps label + input + error message)
-- [ ] T057 [US3] Create FileUpload molecule in frontend/src/components/shared/FileUpload.tsx per contracts/components.md (accept, maxSize, onChange, error, disabled, currentFile props, drag-and-drop support, file type validation)
-- [ ] T058 [US3] Create ExamMetadataForm organism in frontend/src/components/sections/ExamMetadataForm.tsx per contracts/components.md using React Hook Form + Zod validation (onSubmit, defaultValues, isSubmitting, submitButtonText props, all fields from ExamMetadata + file upload)
-- [ ] T059 [US3] Create /exams/create page in frontend/src/app/exams/create/page.tsx wrapping ExamMetadataForm with AuthGuard, onSubmit handler calls taskStore.createTask, starts pipeline simulation, redirects to /exams/preview/[taskId]
+- [ ] T052 [P] [US3] Create Input atom in frontend/src/components/ui/Input.tsx per contracts/components.md (variant: default, filled, outlined; size: sm, md, lg; hasError with red border, leftIcon, rightIcon using Icon component with @iconify/react, fullWidth props, border #dee1e6, rounded-md)
+- [ ] T053 [P] [US3] Create Select atom in frontend/src/components/ui/Select.tsx (options, value, onChange, hasError, placeholder props, styled to match Input, chevron icon from @iconify "lucide:chevron-down")
+- [ ] T054 [P] [US3] Create Textarea atom in frontend/src/components/ui/Textarea.tsx (rows, hasError props, extends HTMLTextAreaElement, styled to match Input with rounded-md border #dee1e6)
+- [ ] T055 [P] [US3] Create Checkbox atom in frontend/src/components/ui/Checkbox.tsx (checked, onChange, label, disabled props, accessible with label click, accent-color purple #7c3aed per Visily)
+- [ ] T056 [US3] Create FormField molecule in frontend/src/components/shared/FormField.tsx per contracts/components.md (label, htmlFor, required, error, helperText, children props, wraps Vietnamese label + input + error message in red #d3595e)
+- [ ] T057 [US3] Create FileUpload molecule in frontend/src/components/shared/FileUpload.tsx per contracts/pages.md with exact Visily styling (custom-dashed-border class for SVG dotted border, background #fcfcfd, upload icon from @iconify "lucide:upload", Vietnamese text "Kéo thả file hoặc nhấn để chọn", accept .doc/.docx, maxSize validation, onChange, error, disabled, currentFile props, drag-and-drop support)
+- [ ] T058 [US3] Create ExamMetadataForm organism in frontend/src/components/sections/ExamMetadataForm.tsx using React Hook Form + Zod validation per research.md (onSubmit, defaultValues, isSubmitting, submitButtonText props, two-column grid layout on desktop grid-cols-1 lg:grid-cols-2 gap-6, all Vietnamese labels from content constants: "Năm học", "Tên kì thi", "Môn học", "Thời gian (phút)", "Số đề cần trộn", "Ghi chú", file upload field, purple #9a94de submit button with text "Trộn đề thi ngay")
+- [ ] T059 [US3] Create /exams/create page in frontend/src/app/exams/create/page.tsx per contracts/pages.md with exact Visily styling (padding px-4 lg:px-36), wrapping with AuthGuard, Vietnamese page title "Tạo đề thi mới", displaying ExamMetadataForm, onSubmit handler calls taskStore.createTask, shows success notification with Vietnamese message "Đã bắt đầu xử lý đề thi!", redirects to /exams/preview/[taskId]
 - [ ] T060 [US3] Implement task creation workflow in frontend/src/lib/state/task-store.ts createTask action (generate UUID, create task with metadata, set status: 'pending', progress: 0, timestamp, add to tasks array, persist to localStorage)
-- [ ] T061 [US3] Integrate pipeline simulation starter in Create page that calls simulateStage for 'extract' stage after task creation, updates task status to 'extracting', then 'understanding' per pipeline.ts durations
+- [ ] T061 [US3] Integrate pipeline simulation starter in Create page that calls simulateStage for 'extract' stage after task creation, updates task status to 'extracting' with progress increments (0% → 25%), then 'understanding' (25% → 50%) per pipeline.ts durations (5s each stage), adds Vietnamese log entries ("Bắt đầu trích xuất dữ liệu", "Đang phân tích câu hỏi") with timestamps to task.logs array
 
 ### Tests for User Story 3
 
-- [ ] T062 [P] [US3] Unit tests for Input, Select, Textarea, Checkbox atoms in frontend/tests/unit/components/ui/FormInputs.test.tsx (test value changes, error states, disabled states, accessibility)
-- [ ] T063 [P] [US3] Unit tests for FormField molecule in frontend/tests/unit/components/shared/FormField.test.tsx (test error display, helper text, required indicator, label association)
-- [ ] T064 [P] [US3] Unit tests for FileUpload component in frontend/tests/unit/components/shared/FileUpload.test.tsx (test file selection, drag-and-drop, file type validation, file size validation, error display)
-- [ ] T065 [US3] Integration test for Create Exam form in frontend/tests/integration/create-exam.test.tsx (test form validation errors, successful submission creates task, task appears in store, pipeline simulation starts)
+- [ ] T062 [P] [US3] Unit tests for Input, Select, Textarea, Checkbox atoms in frontend/tests/unit/components/ui/FormInputs.test.tsx (test value changes, error states with red #d3595e border, disabled states, accessibility, Input border #dee1e6, Checkbox accent purple #7c3aed, rounded-md styling)
+- [ ] T063 [P] [US3] Unit tests for FormField molecule in frontend/tests/unit/components/shared/FormField.test.tsx (test error display in Vietnamese "Vui lòng điền trường này", helper text, required indicator, label association, error color red #d3595e)
+- [ ] T064 [P] [US3] Unit tests for FileUpload component in frontend/tests/unit/components/shared/FileUpload.test.tsx (test file selection, drag-and-drop, file type validation accepts .doc/.docx, maxSize validation, custom-dashed-border class present, Vietnamese text "Kéo thả file hoặc nhấn để chọn", upload icon "lucide:upload", background #fcfcfd)
+- [ ] T065 [US3] Integration test for Create Exam form in frontend/tests/integration/create-exam.test.tsx (test Zod validation errors in Vietnamese "Vui lòng điền tên kì thi", successful submission creates task with taskStore.createTask, task appears in store, pipeline simulation starts, success notification shows Vietnamese "Đã bắt đầu xử lý đề thi!", navigation to /exams/preview/[taskId], all Vietnamese labels render "Năm học", "Tên kì thi", "Môn học", submit button purple #9a94de with text "Trộn đề thi ngay")
 
 **Checkpoint**: At this point, User Stories 1, 2, AND 3 should work independently - users can create tasks and see them enter processing
 
@@ -177,20 +181,20 @@
 
 ### Implementation for User Story 4
 
-- [ ] T066 [P] [US4] Create Card molecule in frontend/src/components/shared/Card.tsx per contracts/components.md (variant: default, outlined, elevated; padding: none, sm, md, lg; header, footer, onClick, className props)
-- [ ] T067 [P] [US4] Create Modal molecule in frontend/src/components/shared/Modal.tsx per contracts/components.md (isOpen, onClose, title, size, showCloseButton, closeOnOverlayClick, closeOnEsc, children, footer props, focus trap, body scroll lock)
-- [ ] T068 [US4] Create QuestionList organism in frontend/src/components/sections/QuestionList.tsx per contracts/components.md (questions, variant: compact or detailed, editable, onQuestionClick props, displays numbered list with options and correct answer highlight)
-- [ ] T069 [US4] Create preview page in frontend/src/app/exams/preview/[taskId]/page.tsx wrapping with AuthGuard, fetching task from taskStore by taskId param, displaying QuestionList with mock questions from mockQuestions array, showing total count, Confirm button
-- [ ] T070 [US4] Implement confirmation handler in preview page that calls taskStore.updateTaskStatus(taskId, 'shuffling', 50), opens processing Modal with ProgressBar, continues pipeline simulation through shuffle → generate → completed
-- [ ] T071 [US4] Add auto-redirect logic in preview page that navigates to /tasks after task status changes to 'shuffling' and 5-second timer elapses
-- [ ] T072 [US4] Implement automatic redirect to preview page logic in task pipeline simulation when status changes from 'understanding' to 'awaiting' (add in frontend/src/lib/simulation/pipeline.ts or page-level useEffect)
+- [ ] T066 [P] [US4] Create Card molecule in frontend/src/components/shared/Card.tsx per contracts/components.md (variant: default, outlined, elevated; padding: none, sm, md, lg; header, footer, onClick, className props, border #dee1e6, rounded-[10px] for question cards, rounded-xl for large cards)
+- [ ] T067 [P] [US4] Create Modal molecule in frontend/src/components/shared/Modal.tsx per contracts/components.md (isOpen, onClose, title, size, showCloseButton, closeOnOverlayClick, closeOnEsc, children, footer props, focus trap, body scroll lock, rounded-xl, shadow-lg, Vietnamese close button text or X icon from @iconify "lucide:x")
+- [ ] T068 [US4] Create QuestionList organism in frontend/src/components/sections/QuestionList.tsx per contracts/pages.md Preview section (questions, variant: compact or detailed, editable, onQuestionClick props, displays numbered Vietnamese question table with headers "STT", "Câu hỏi", "Đáp án", "Độ tin cậy", options A/B/C/D in Vietnamese, correct answer highlight in green #39a85e background, confidence badges in color: high green #39a85e, medium yellow #fcb831, low red #d3595e, hide-scrollbar class on table container)
+- [ ] T069 [US4] Create preview page in frontend/src/app/exams/preview/[taskId]/page.tsx per contracts/pages.md with exact Visily styling (max-w-[1152px] centered, padding px-4), wrapping with AuthGuard, fetching task from taskStore by taskId param, displaying QuestionList with mockQuestions, showing Vietnamese total count "Tổng số câu hỏi: X", purple #9a94de Confirm button with text "Xác nhận và tiếp tục", Vietnamese page title "Xem trước đề thi"
+- [ ] T070 [US4] Implement confirmation handler in preview page that calls taskStore.updateTaskStatus(taskId, 'shuffling', 50), opens processing Modal with ProgressBar showing purple #9a94de progress, Vietnamese modal title "Đang xử lý...", continues pipeline simulation through shuffle (5s) → generate (5s) → completed (100%)
+- [ ] T071 [US4] Add auto-redirect logic in preview page that navigates to /tasks after task status changes to 'shuffling' and 5-second timer elapses, shows Vietnamese success notification "Đề thi đã được tạo thành công!"
+- [ ] T072 [US4] Implement automatic redirect to preview page logic in task pipeline simulation when status changes from 'understanding' to 'awaiting' (add in frontend/src/lib/simulation/pipeline.ts simulateStage function, navigate to /exams/preview/[taskId] when status becomes 'awaiting')
 
 ### Tests for User Story 4
 
-- [ ] T073 [P] [US4] Unit tests for Card component in frontend/tests/unit/components/shared/Card.test.tsx (test variants, padding, header/footer rendering, onClick interaction)
-- [ ] T074 [P] [US4] Unit tests for Modal component in frontend/tests/unit/components/shared/Modal.test.tsx (test open/close, overlay click, ESC key, focus trap, accessibility)
-- [ ] T075 [P] [US4] Unit tests for QuestionList organism in frontend/tests/unit/components/sections/QuestionList.test.tsx (test compact vs detailed variants, question rendering, correct answer highlighting)
-- [ ] T076 [US4] Integration test for preview confirmation flow in frontend/tests/integration/preview-confirm.test.tsx (test preview page displays questions, Confirm button resumes pipeline, modal shows processing, redirect to tasks after completion)
+- [ ] T073 [P] [US4] Unit tests for Card component in frontend/tests/unit/components/shared/Card.test.tsx (test variants, padding, header/footer rendering, onClick interaction, border #dee1e6, rounded-[10px] and rounded-xl styling)
+- [ ] T074 [P] [US4] Unit tests for Modal component in frontend/tests/unit/components/shared/Modal.test.tsx (test open/close, overlay click, ESC key, focus trap, accessibility, Vietnamese close text or "lucide:x" icon, rounded-xl, shadow-lg)
+- [ ] T075 [P] [US4] Unit tests for QuestionList organism in frontend/tests/unit/components/sections/QuestionList.test.tsx (test compact vs detailed variants, Vietnamese question table with headers "STT", "Câu hỏi", "Đáp án", "Độ tin cậy", correct answer highlighting in green #39a85e, confidence badges with colors high green/medium yellow/low red, hide-scrollbar class)
+- [ ] T076 [US4] Integration test for preview confirmation flow in frontend/tests/integration/preview-confirm.test.tsx (test preview page displays QuestionList with Vietnamese questions, total count "Tổng số câu hỏi: X", purple #9a94de Confirm button "Xác nhận và tiếp tục" resumes pipeline, modal shows processing with Vietnamese "Đang xử lý...", redirect to /tasks after completion with success notification "Đề thi đã được tạo thành công!", automatic redirect from 'understanding' to 'awaiting' status)
 
 **Checkpoint**: At this point, User Stories 1-4 should work independently - complete exam creation flow with human-in-the-loop confirmation works end-to-end
 
@@ -204,22 +208,22 @@
 
 ### Implementation for User Story 5
 
-- [ ] T077 [P] [US5] Create Badge atom in frontend/src/components/ui/Badge.tsx per contracts/components.md (variant: pending, extracting, understanding, awaiting, shuffling, generating, completed, failed; size: sm, md, lg; color mapping to design tokens status colors)
-- [ ] T078 [P] [US5] Create ProgressBar atom in frontend/src/components/ui/ProgressBar.tsx per contracts/components.md (value 0-100, max, size, variant: primary/success/warning/error, showLabel, label, animated props, uses HTML progress element)
-- [ ] T079 [US5] Create Datatable organism in frontend/src/components/shared/Datatable.tsx per contracts/components.md with TypeScript generics (data, columns, keyExtractor, emptyState, loading, onRowClick, pagination, sorting props)
-- [ ] T080 [US5] Create useTaskPolling custom hook in frontend/src/hooks/useTaskPolling.ts per contracts/components.md (taskId, interval default 3000ms, enabled, onComplete, onError props, returns task, isPolling, stopPolling)
-- [ ] T081 [US5] Create Task Management page in frontend/src/app/tasks/page.tsx wrapping with AuthGuard, fetching tasks from taskStore, displaying Datatable with columns (Task ID, Exam Name, Subject, Status Badge, Progress Bar, Created Date), row click navigates to /exams/[taskId]
-- [ ] T082 [US5] Implement polling logic in Task Management page using useEffect with setInterval that calls taskStore tasks and updates statuses/progress every 3s based on pipeline simulation state
-- [ ] T083 [US5] Add pagination controls to Datatable in Task Management page (10 tasks per page, prev/next buttons, page number display)
-- [ ] T084 [US5] Add Download button column to Datatable that appears only when task.status === 'completed', onClick shows placeholder/mock download action
+- [ ] T077 [P] [US5] Create Badge atom in frontend/src/components/ui/Badge.tsx per contracts/components.md (variant: pending, extracting, understanding, awaiting, shuffling, generating, completed, failed; size: sm, md, lg; color mapping to design tokens status colors - pending gray, processing purple #9a94de, completed green #39a85e, failed red #d3595e, awaiting yellow #fcb831, Vietnamese text "Chờ xử lý", "Đang trích xuất", "Đang phân tích", "Chờ xác nhận", "Đang trộn đề", "Đang tạo đề", "Hoàn thành", "Thất bại")
+- [ ] T078 [P] [US5] Create ProgressBar atom in frontend/src/components/ui/ProgressBar.tsx per contracts/components.md (value 0-100, max, size, variant: primary uses purple #9a94de/success/warning/error, showLabel, label, animated props, uses HTML progress element, rounded-full appearance)
+- [ ] T079 [US5] Create Datatable organism in frontend/src/components/shared/Datatable.tsx per contracts/pages.md Task Management section with TypeScript generics (data, columns, keyExtractor, emptyState, loading, onRowClick, pagination, sorting props, Vietnamese column headers array, Checkbox with accent purple #7c3aed for bulk actions, Vietnamese empty state "Chưa có đề thi nào")
+- [ ] T080 [US5] Create useTaskPolling custom hook in frontend/src/hooks/useTaskPolling.ts per contracts/components.md (taskId, interval default 3000ms, enabled, onComplete, onError props, returns task, isPolling, stopPolling, fetches tasks every 3s from taskStore, updates processing tasks only to avoid thrashing)
+- [ ] T081 [US5] Create Task Management page in frontend/src/app/tasks/page.tsx per contracts/pages.md with exact Visily styling (padding px-4 lg:px-32), wrapping with AuthGuard, fetching tasks from taskStore, Vietnamese page title "Quản lý đề thi", displaying Datatable with Vietnamese columns ("Mã đề", "Tên kì thi", "Môn học", "Trạng thái", "Tiến độ", "Ngày tạo"), Badge with status colors, ProgressBar with purple #9a94de, row click navigates to /tasks/[id]
+- [ ] T082 [US5] Implement polling logic in Task Management page using useTaskPolling hook that calls taskStore.getTasks() and updates UI every 3s for processing tasks only (extracting, understanding, shuffling, generating), completed/failed tasks stop polling
+- [ ] T083 [US5] Add pagination controls to Datatable in Task Management page (10 tasks per page, Vietnamese prev/next buttons "Trước"/"Sau", page number display "Trang X / Y", total count "Tổng số: X đề thi")
+- [ ] T084 [US5] Add Download button column to Datatable that appears only when task.status === 'completed', Icon with @iconify "lucide:download", purple #9a94de color, onClick shows Vietnamese success notification "Đang tải xuống..." then "Đã tải xuống thành công!" (mock action)
 
 ### Tests for User Story 5
 
-- [ ] T085 [P] [US5] Unit tests for Badge component in frontend/tests/unit/components/ui/Badge.test.tsx (test all status variants render correct colors, sizes work correctly, aria-label present)
-- [ ] T086 [P] [US5] Unit tests for ProgressBar component in frontend/tests/unit/components/ui/ProgressBar.test.tsx (test value clamping 0-100, variants, label display, animation class)
-- [ ] T087 [P] [US5] Unit tests for Datatable component in frontend/tests/unit/components/shared/Datatable.test.tsx (test column rendering, row click handler, pagination, sorting, empty state, loading state)
-- [ ] T088 [P] [US5] Unit tests for useTaskPolling hook in frontend/tests/unit/hooks/useTaskPolling.test.tsx (test polling starts/stops, interval timing, onComplete/onError callbacks, cleanup on unmount)
-- [ ] T089 [US5] Integration test for Task Management polling in frontend/tests/integration/task-polling.test.tsx (test tasks update every 3s, status badges change colors, progress bars increment, completed tasks show Download button)
+- [ ] T085 [P] [US5] Unit tests for Badge component in frontend/tests/unit/components/ui/Badge.test.tsx (test all status variants render correct colors - pending gray, processing purple #9a94de, completed green #39a85e, failed red #d3595e, awaiting yellow #fcb831, sizes work correctly, Vietnamese status text renders "Chờ xử lý", "Đang trích xuất", "Hoàn thành", "Thất bại", aria-label present)
+- [ ] T086 [P] [US5] Unit tests for ProgressBar component in frontend/tests/unit/components/ui/ProgressBar.test.tsx (test value clamping 0-100, primary variant uses purple #9a94de, label display, animation class, rounded-full styling)
+- [ ] T087 [P] [US5] Unit tests for Datatable component in frontend/tests/unit/components/shared/Datatable.test.tsx (test Vietnamese column headers render, row click handler, pagination with "Trước"/"Sau" buttons, sorting, Vietnamese empty state "Chưa có đề thi nào", loading state, Checkbox accent purple #7c3aed)
+- [ ] T088 [P] [US5] Unit tests for useTaskPolling hook in frontend/tests/unit/hooks/useTaskPolling.test.tsx (test polling starts/stops, interval 3000ms timing, onComplete/onError callbacks, cleanup on unmount, only polls processing tasks)
+- [ ] T089 [US5] Integration test for Task Management polling in frontend/tests/integration/task-polling.test.tsx (test tasks update every 3s, Vietnamese status badges change colors and text, purple #9a94de progress bars increment, completed tasks show Download button with "lucide:download" icon, Vietnamese notifications "Đang tải xuống..." and "Đã tải xuống thành công!", Vietnamese pagination "Trang X / Y" and total "Tổng số: X đề thi")
 
 **Checkpoint**: At this point, User Stories 1-5 should work independently - task monitoring with real-time updates works across all task states
 
@@ -233,20 +237,20 @@
 
 ### Implementation for User Story 6
 
-- [ ] T090 [P] [US6] Create ExamMetadata section component in frontend/src/components/sections/ExamMetadata.tsx displaying metadata fields (academic_year, exam_name, subject, duration_minutes, num_versions, notes, file_name as read-only Card)
-- [ ] T091 [P] [US6] Create ProcessingStatus section component in frontend/src/components/sections/ProcessingStatus.tsx per contracts/components.md (task, onConfirm, onCancel, onRetry, showLogs, logs props, displays Badge, ProgressBar, log timeline with timestamps, conditional Retry button)
-- [ ] T092 [US6] Create Exam Detail page in frontend/src/app/exams/[taskId]/page.tsx wrapping with AuthGuard, fetching task by taskId param from taskStore, displaying three sections (ExamMetadata, ProcessingStatus, QuestionList)
-- [ ] T093 [US6] Implement retry logic in taskStore.retryTask action (frontend/src/lib/state/task-store.ts) that resets task.status to 'pending', task.progress to 0, increments task.retry_count, clears task.error, logs retry event, updates task.updated_at timestamp
-- [ ] T094 [US6] Integrate retry handler in Exam Detail page that calls taskStore.retryTask(taskId), restarts pipeline simulation from extract stage
-- [ ] T095 [US6] Add retry count limit check (max 2 retries) in ProcessingStatus component to disable Retry button when task.retry_count >= 2
-- [ ] T096 [US6] Implement real-time polling in Exam Detail page using useTaskPolling hook to update all three sections (metadata, status, questions) every 3 seconds
+- [ ] T090 [P] [US6] Create ExamMetadata section component in frontend/src/components/sections/ExamMetadata.tsx per contracts/pages.md Detail Metadata section displaying metadata fields as read-only Card with Vietnamese labels ("Năm học", "Tên kì thi", "Môn học", "Thời gian", "Số đề", "Ghi chú", "File đề thi"), grid layout grid-cols-1 lg:grid-cols-2 gap-4, border #dee1e6, rounded-xl
+- [ ] T091 [P] [US6] Create ProcessingStatus section component in frontend/src/components/sections/ProcessingStatus.tsx per contracts/pages.md Detail Status section (task, onConfirm, onCancel, onRetry, showLogs, logs props, displays Vietnamese status Badge, purple #9a94de ProgressBar with percentage label, log timeline with Vietnamese timestamps "X phút trước", step-line-active class for active stage indicator with gradient background, log-container class with tabular-nums font, conditional purple Retry button "Thử lại" shows only for failed status)
+- [ ] T092 [US6] Create Exam Detail page in frontend/src/app/tasks/[id]/page.tsx per contracts/pages.md with exact Visily styling (padding px-4 lg:px-[120px], max-w-7xl), wrapping with AuthGuard, fetching task by id param from taskStore, Vietnamese breadcrumb navigation "Quản lý đề thi / Chi tiết", Vietnamese page title with exam name, displaying three sections in vertical layout (ExamMetadata card top, ProcessingStatus card middle with retry button, QuestionList card bottom labeled "Dữ liệu trích xuất"), proper spacing between sections
+- [ ] T093 [US6] Implement retry logic in taskStore.retryTask action (frontend/src/lib/state/task-store.ts) that resets task.status to 'pending', task.progress to 0, increments task.retry_count, clears task.error, adds Vietnamese log entry "Đã thử lại lần {retry_count}" with timestamp, updates task.updated_at, persists to localStorage
+- [ ] T094 [US6] Integrate retry handler in Exam Detail page that calls taskStore.retryTask(id), shows Vietnamese confirmation modal "Bạn có chắc muốn thử lại?" with "Xác nhận" button in purple #9a94de, restarts pipeline simulation from extract stage after confirmation, shows Vietnamese success notification "Đã bắt đầu xử lý lại"
+- [ ] T095 [US6] Add retry count limit check (max 2 retries) in ProcessingStatus component to disable Retry button when task.retry_count >= 2, show Vietnamese disabled state text "Đã hết lượt thử lại (tối đa 2 lần)" in gray
+- [ ] T096 [US6] Implement real-time polling in Exam Detail page using useTaskPolling hook with 3000ms interval to update all three sections (metadata remains static, status updates Badge color and ProgressBar, QuestionList shows when status is 'awaiting' or 'completed'), auto-stop polling when status becomes 'completed' or 'failed'
 
 ### Tests for User Story 6
 
-- [ ] T097 [P] [US6] Unit tests for ExamMetadata component in frontend/tests/unit/components/sections/ExamMetadata.test.tsx (test all metadata fields display correctly, formatting)
-- [ ] T098 [P] [US6] Unit tests for ProcessingStatus component in frontend/tests/unit/components/sections/ProcessingStatus.test.tsx (test Retry button shows only for failed status, onRetry callback, retry count limit, log display)
-- [ ] T099 [US6] Integration test for Exam Detail page in frontend/tests/integration/exam-detail.test.tsx (test three sections render, polling updates status/progress/logs, Retry resets task and restarts pipeline)
-- [ ] T100 [US6] Integration test for retry flow in frontend/tests/integration/task-retry.test.tsx (test failed task shows Retry button, clicking Retry increments retry_count, task restarts from pending, max 2 retries enforced)
+- [ ] T097 [P] [US6] Unit tests for ExamMetadata component in frontend/tests/unit/components/sections/ExamMetadata.test.tsx (test all Vietnamese metadata labels render "Năm học", "Tên kì thi", "Môn học", "Thời gian", "Số đề", "Ghi chú", "File đề thi", grid layout grid-cols-1 lg:grid-cols-2, Card styling border #dee1e6, rounded-xl)
+- [ ] T098 [P] [US6] Unit tests for ProcessingStatus component in frontend/tests/unit/components/sections/ProcessingStatus.test.tsx (test Vietnamese Retry button "Thử lại" shows only for failed status in purple #9a94de, onRetry callback fires, retry count limit enforces max 2 with Vietnamese disabled text "Đã hết lượt thử lại (tối đa 2 lần)", Vietnamese log display with timestamps "X phút trước", step-line-active class on active stage, log-container with tabular-nums, Badge status colors, ProgressBar purple #9a94de)
+- [ ] T099 [US6] Integration test for Exam Detail page in frontend/tests/integration/exam-detail.test.tsx (test page route /tasks/[id] with padding px-4 lg:px-[120px], Vietnamese breadcrumb "Quản lý đề thi / Chi tiết", three sections render (ExamMetadata top, ProcessingStatus middle, QuestionList bottom labeled "Dữ liệu trích xuất"), polling updates status Badge and ProgressBar every 3s, auto-stops when status becomes completed/failed, Vietnamese Retry confirmation modal "Bạn có chắc muốn thử lại?" with purple "Xác nhận" button)
+- [ ] T100 [US6] Integration test for retry flow in frontend/tests/integration/task-retry.test.tsx (test failed task shows Vietnamese Retry button "Thử lại", clicking shows confirmation modal, confirming increments retry_count, adds Vietnamese log "Đã thử lại lần {retry_count}", task resets to pending with 0% progress, pipeline restarts from extract, success notification "Đã bắt đầu xử lý lại", max 2 retries enforced with Vietnamese disabled state, debouncing prevents double-click retries)
 
 **Checkpoint**: All user stories (1-6) should now be independently functional - complete UI workflow from homepage → auth → create → preview → monitor → detail → retry works end-to-end
 
@@ -256,21 +260,21 @@
 
 **Purpose**: Improvements that affect multiple user stories, performance, and production readiness
 
-- [ ] T101 [P] Add error boundary component in frontend/src/components/ErrorBoundary.tsx to catch React errors and display fallback UI
-- [ ] T102 [P] Add loading skeleton components in frontend/src/components/ui/Skeleton.tsx for use in Datatable and page loading states
-- [ ] T103 [P] Optimize Datatable performance with React.memo and useMemo for large task lists (20+ tasks)
-- [ ] T104 [P] Add transition animations for Modal open/close, page navigation using Tailwind transitions
-- [ ] T105 [P] Implement toast notification system in frontend/src/components/ui/Toast.tsx for success/error feedback (task created, retry started, etc.)
-- [ ] T106 [P] Add favicon and meta tags in frontend/src/app/layout.tsx for SEO and browser tab branding
-- [ ] T107 Add comprehensive JSDoc comments to all components documenting props, usage examples per contracts/components.md
-- [ ] T108 [P] Run test coverage report using npm run test:coverage, verify >80% coverage for component library
-- [ ] T109 [P] Validate quickstart.md instructions by following setup steps on fresh clone
-- [ ] T110 [P] Create component usage examples document in specs/002-ui-mock-mvp/examples.md showing how to compose pages from components
-- [ ] T111 Perform manual end-to-end testing of all 6 user stories following quickstart.md user flows
-- [ ] T112 [P] Optimize bundle size by analyzing Next.js build output, consider code splitting for Modal, Datatable
-- [ ] T113 [P] Add TypeScript strict mode checks, resolve any type errors
-- [ ] T114 [P] Add ESLint rules for accessibility (eslint-plugin-jsx-a11y) and fix violations
-- [ ] T115 Run production build (npm run build) and verify no build errors or warnings
+- [ ] T101 [P] Add error boundary component in frontend/src/components/ErrorBoundary.tsx to catch React errors and display Vietnamese fallback UI "Đã xảy ra lỗi. Vui lòng tải lại trang." with purple #9a94de reload button
+- [ ] T102 [P] Add loading skeleton components in frontend/src/components/ui/Skeleton.tsx for use in Datatable and page loading states with shimmer animation, rounded-md styling matching component shapes, gray background #f5f6f7
+- [ ] T103 [P] Optimize Datatable performance with React.memo and useMemo for large task lists (20+ tasks), virtualization consideration for 100+ tasks, debounce search/filter inputs
+- [ ] T104 [P] Add transition animations for Modal open/close using Tailwind transition-opacity and scale-95, page navigation fade transitions, Button hover scale(0.98) per contracts/pages.md Login interactive-transition class
+- [ ] T105 [P] Implement toast notification system in frontend/src/components/ui/Toast.tsx for success/error feedback with Vietnamese messages ("Đã tạo đề thi thành công", "Đã thử lại thành công", "Đang tải xuống...", "Đã xóa thành công"), success toast green #39a85e, error toast red #d3595e, info toast purple #9a94de, auto-dismiss 3s, slide-in animation, position top-right
+- [ ] T106 [P] Add favicon.ico and meta tags in frontend/src/app/layout.tsx for SEO (Vietnamese title "SiroMix - Trộn đề thi nhanh chóng", description "Công cụ AI trộn đề thi thông minh cho giáo viên", og:image, theme-color purple #9a94de)
+- [ ] T107 Add comprehensive JSDoc comments to all components documenting props, usage examples per contracts/components.md, Vietnamese descriptions for user-facing text props
+- [ ] T108 [P] Run test coverage report using npm run test:coverage (vitest --coverage), verify >80% coverage for component library per Constitution Principle IX, generate HTML report in coverage/ directory
+- [ ] T109 [P] Validate quickstart.md instructions by following setup steps on fresh clone (git clone, npm install, npm run dev), verify all Vietnamese content renders, purple brand colors appear, Trieu Kiem user works, all 6 pages accessible
+- [ ] T110 [P] Create component usage examples document in specs/002-ui-mock-mvp/examples.md showing how to compose pages from atoms/molecules/organisms, Vietnamese code examples with content constants usage, purple #9a94de theming examples
+- [ ] T111 Perform manual end-to-end testing of all 6 user stories following quickstart.md user flows: Homepage → Login (Trieu Kiem) → Create Exam (Vietnamese form) → Preview (Vietnamese question table) → Task Management (Vietnamese datatable with polling) → Detail (3 sections with Vietnamese labels) → Retry (Vietnamese confirmation)
+- [ ] T112 [P] Optimize bundle size by analyzing Next.js build output (npm run build), consider code splitting for Modal, Datatable, lazy loading for Icon @iconify/react library, verify Inter font subset includes Vietnamese characters
+- [ ] T113 [P] Add TypeScript strict mode checks in tsconfig.json (strict: true, noUncheckedIndexedAccess: true), resolve any type errors in components/stores/hooks
+- [ ] T114 [P] Add ESLint rules for accessibility (eslint-plugin-jsx-a11y) and fix violations (alt text for images IMG_1.webp, aria-labels for Icon buttons, Vietnamese aria-labels "Đăng nhập", "Tìm kiếm", form labels properly associated, focus visible styles with purple #9a94de outline)
+- [ ] T115 Run production build (npm run build) and verify no build errors or warnings, check Vietnamese text renders without encoding issues, purple #9a94de colors compile correctly in Tailwind, all @iconify icons load, Visily assets copied to public/assets/
 
 ---
 

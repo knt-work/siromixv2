@@ -32,13 +32,13 @@ export interface User {
 - `role`: Required, must be 'professor'
 - `created_at`: Required, ISO 8601 format
 
-**Mock Example**:
+**Mock Example** (Vietnamese user per clarifications Q3):
 ```typescript
 export const mockUser: User = {
   user_id: 'mock-user-1',
-  email: 'john.doe@university.edu',
-  full_name: 'John Doe',
-  avatar_url: 'https://ui-avatars.com/api/?name=John+Doe',
+  email: 'trieu.kiem@university.edu',
+  full_name: 'Trieu Kiem',
+  avatar_url: '/assets/IMG_1.webp',  // From Visily assets (html/SiroMix - Homepage/assets/)
   role: 'professor',
   created_at: '2026-01-15T10:30:00Z',
 };

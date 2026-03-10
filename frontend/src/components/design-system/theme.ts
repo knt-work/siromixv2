@@ -3,15 +3,21 @@
  * 
  * Extends Tailwind CSS theme with custom design tokens.
  * Import this in tailwind.config.js to apply design system.
+ * Updated with purple #9a94de brand and exact Visily values.
  */
 
-import { colors, spacing, borderRadius, shadows, breakpoints, zIndex } from './tokens';
+import { colors, spacing, borderRadius, shadows, breakpoints, zIndex, typography } from './tokens';
 
 export const theme = {
   colors: {
     // Override Tailwind defaults with our design tokens
-    primary: colors.primary,
-    gray: colors.gray,
+    primary: colors.primary,        // Purple #9a94de (Visily brand)
+    brand: colors.brand,            // Brand object for purple variants
+    text: colors.text,              // Text color tokens (dark, gray, light)
+    border: colors.border,          // Border color #dee1e6
+    background: colors.background,   // Background colors (main, white, gray)
+    
+    // Keep semantic colors
     success: { DEFAULT: colors.success },
     warning: { DEFAULT: colors.warning },
     error: { DEFAULT: colors.error },
@@ -20,6 +26,15 @@ export const theme = {
     // Task status colors (custom utility classes)
     status: colors.status,
   },
+
+  fontFamily: {
+    sans: typography.fontFamily.sans.split(','),
+    mono: typography.fontFamily.mono.split(','),
+  },
+
+  fontWeight: typography.fontWeight,
+
+  letterSpacing: typography.letterSpacing,
 
   spacing: {
     // Extend default spacing with our grid system
@@ -35,12 +50,16 @@ export const theme = {
   borderRadius: {
     sm: borderRadius.sm,
     md: borderRadius.md,
+    '10px': borderRadius['10px'],    // Visily card/logo radius
     lg: borderRadius.lg,
+    xl: borderRadius.xl,
     full: borderRadius.full,
   },
 
   boxShadow: {
     sm: shadows.sm,
+    card: shadows.card,              // Visily custom card shadow
+    'auth-card': shadows['auth-card'], // Visily login card shadow
     md: shadows.md,
     lg: shadows.lg,
     xl: shadows.xl,

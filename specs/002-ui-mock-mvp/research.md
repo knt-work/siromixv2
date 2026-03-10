@@ -10,47 +10,105 @@
 
 ### 1. Design Token Extraction from Visily Designs
 
-**Decision**: Extract design tokens from Visily exported HTML (`./html/`) to create centralized design system
+**Decision**: Extract design tokens from Visily exported HTML (`./html/`) to create centralized design system with exact values
 
 **Rationale**: 
 - Design tokens centralize visual consistency (colors, typography, spacing)
 - Enable theme-ability and easy visual updates without touching components
 - Prevent hardcoded styles scattered across codebase
-- Visily exports contain CSS variables and computed styles that can be systematically extracted
+- **Clarifications confirmed**: Purple brand #9a94de, preserve exact Visily values per page (shadows, radius, padding)
+- 6 Visily CSS files analyzed to extract actual design system values
 
-**Approach**:
-1. Inspect Visily HTML/CSS for color palette, typography scales, spacing units
-2. Create `src/components/design-system/tokens.ts` with categorized tokens:
-   - **Colors**: primary, secondary, success, warning, error, gray scale, status badges
-   - **Typography**: font families, size scale, line heights, font weights
-   - **Spacing**: 4px/8px grid system (spacing scale: xs=4px, sm=8px, md=16px, lg=24px, xl=32px, 2xl=48px)
-   - **Border Radius**: button radius, card radius, input radius
-   - **Shadows**: card shadow, modal shadow, hover shadow
-   - **Breakpoints**: desktop-only (1024px minimum, 1280px, 1536px)
-3. Export tokens as TypeScript constants for type safety
-4. Configure Tailwind CSS to use custom tokens (extend theme in tailwind.config.js)
+**Findings from Visily CSS/React Analysis**:
 
-**Example Token Structure**:
+**Colors** (extracted from `html/*/src/style.css`):
 ```typescript
 export const colors = {
-  primary: { 50: '#...', 500: '#...', 900: '#...' },
-  gray: { 50: '#...', 500: '#...', 900: '#...' },
+  brand: {
+    primary: '#9a94de',      // Purple brand - buttons, logo, badges, accents
+    light: '#9a94de0d',      // 5% opacity backgrounds
+  },
+  text: {
+    dark: '#171a1f',         // Headings, primary content
+    gray: '#565d6d',         // Secondary text, labels
+  },
+  border: '#dee1e6',         // Card borders, dividers
+  background: {
+    main: '#fcfcfd',         // Off-white subtle background
+    white: '#ffffff',        // Pure white for cards
+  },
   status: {
-    pending: '#6B7280',      // gray
-    extracting: '#3B82F6',   // blue
-    understanding: '#3B82F6', // blue
-    awaiting: '#F59E0B',     // amber
-    shuffling: '#8B5CF6',    // purple
-    generating: '#8B5CF6',   // purple
-    completed: '#10B981',    // green
-    failed: '#EF4444'        // red
+    success: '#39a85e',      // Completed tasks (green)
+    warning: '#fcb831',      // Medium confidence (yellow)
+    error: '#d3595e',        // Failed, low confidence (red)
+    processing: '#9a94de',   // Processing stages (purple)
+    pending: '#6b7280',      // Pending/gray states
   }
 }
 ```
 
+**Typography** (consistent across all 6 exports):
+```typescript
+export const typography = {
+  fontFamily: '"Inter", ui-sans-serif, system-ui, sans-serif',
+  fontWeight: {
+    regular: 400,
+    medium: 500,
+    semibold: 600,
+    bold: 700,
+  },
+  letterSpacing: {
+    heading: '-0.02em',      // For headlines
+    tight: '-0.5px',         // For tight text
+  },
+  fontSmoothing: 'antialiased',  // -webkit-font-smoothing
+}
+```
+
+**Spacing & Layout** (per-page variations per clarifications):
+- Homepage: `px-4 lg:px-[144px]` (wider for hero section)
+- Create Exam: `px-4 lg:px-36` (medium for form)
+- Task Management: `px-4 lg:px-32` (tighter for table density)
+- Exam Detail: `px-4 lg:px-[120px]` (balanced for content)
+- Login: Centered card `max-w-[560px]`
+- Preview: Container `max-w-[1152px]`
+
+**Decision**: Document in `contracts/pages.md`, use exact classes per page (NO normalization)
+
+**Border Radius** (context-specific):
+- Inputs: `rounded-md`
+- Cards/Logo container: `rounded-[10px]`
+- Large cards: `rounded-xl`
+- Medium components: `rounded-lg`
+- Avatars/Badges: `rounded-full`
+
+**Shadows** (multiple definitions):
+- Standard: `shadow-sm`
+- Custom card: `shadow-[0px_2px_5px_0px_#171a1f17,_0px_0px_2px_0px_#171a1f1f]`
+- Auth card: `shadow-[0px_10px_25px_rgba(23, 26, 31, 0.08)]`
+
+**Custom CSS Classes** (from Visily):
+- `custom-dashed-border`: SVG data URI for file upload dotted border
+- `custom-scrollbar`: 5-6px width, `#e5e7eb` thumb color
+- `hide-scrollbar`: MS/webkit variants for hiding scrollbars
+- `step-line-active`: Green gradient for progress steps
+- `log-container`: `font-feature-settings: "tnum"` for tabular numbers
+
+**Vietnamese Language** (per clarifications Q2):
+- All UI text in Vietnamese extracted from Visily App.tsx files
+- Examples: "Đăng nhập" (Login), "Tạo đề mới" (Create Exam), "Xác nhận" (Confirm)
+- **Implementation**: Centralized in `src/constants/content.ts` with semantic keys
+
+**Approach**:
+1. Create `src/lib/design-tokens.ts` with exact Visily values above
+2. Create `src/styles/custom.css` with custom CSS classes (dashed-border, scrollbar, etc.)
+3. Configure Tailwind CSS to extend theme with purple brand, exact spacing values
+4. Create `src/constants /content.ts` with all Vietnamese text from Visily exports
+
 **Alternatives Considered**:
-- Option: Use Tailwind default theme → Rejected: Doesn't match Visily designs, inconsistent visual identity
-- Option: Hardcode styles in components → Rejected: Violates FR-056, difficult to maintain consistency
+- ❌ Normalize all values to single scale → Rejected: Clarifications Q5 requires preserving exact Visily values per page
+- ❌ Use Tailwind default theme → Rejected: Doesn't match purple brand #9a94de or Visily spacing
+- ✅ Extract exact values + preserve per-page variations → Honors design intent, passes clarifications
 
 ---
 
@@ -268,36 +326,65 @@ test('does not call onClick when disabled', async () => {
 
 ### 7. Mock Data Structure
 
-**Decision**: Hardcoded TypeScript objects in `lib/mock-data/` with factory functions
+**Decision**: Hardcoded TypeScript objects in `lib/mock-data/` with factory functions + Vietnamese content
 
 **Rationale**:
-- FR-046 requires configurable mock data (10-20 questions, mock user)
+- FR-046 requires configurable mock data with Trieu Kiem user (Vietnamese email, Visily avatar)
+- **Clarifications confirmed**: User "Trieu Kiem", email "trieu.kiem@university.edu", avatar "./assets/IMG_1.webp"
+- All question content in Vietnamese matching Visily exports
 - TypeScript ensures mock data matches real data model interfaces
 - Factory functions enable generating varied mock data for testing
 - Easy to replace with API calls in future (same interfaces, different source)
 
 **Mock Data Files**:
-1. `lib/mock-data/users.ts`: 1 mock user (John Doe, email, avatar URL)
-2. `lib/mock-data/questions.ts`: 15 mock exam questions with 4 options each, correct answer
+1. `lib/mock-data/users.ts`: Mock Trieu Kiem user with Vietnamese email and Visily avatar
+   ```typescript
+   export const mockUser: User = {
+     user_id: 'user-1',
+     name: 'Trieu Kiem',
+     email: 'trieu.kiem@university.edu',
+     avatar_url: '/assets/IMG_1.webp',  // Copied from html/SiroMix - Homepage/assets/
+     authentication_status: true,
+   };
+   ```
+
+2. `lib/mock-data/questions.ts`: 15-20 mock exam questions in Vietnamese
+   ```typescript
+   export const mockQuestions: Question[] = [
+     {
+       question_id: 'q1',
+       question_text: 'Thủ đô của Việt Nam là gì?',  // Vietnamese content
+       options: ['Thành phố Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng', 'Cần Thơ'],
+       correct_answer: 'B',
+       question_order: 1,
+     },
+     // ... 14-19 more questions in Vietnamese
+   ];
+   ```
+
 3. `lib/mock-data/tasks.ts`: Factory function `createMockTask(metadata)` returns Task object
 
-**Example Mock Question**:
-```typescript
-export const mockQuestions: Question[] = [
-  {
-    question_id: 'q1',
-    question_text: 'What is the capital of France?',
-    options: ['London', 'Berlin', 'Paris', 'Madrid'],
-    correct_answer: 'C',
-    question_order: 1,
-  },
-  // ... 14 more questions
-];
-```
+**Vietnamese Content Constants** (`src/constants/content.ts`):
+- Extracted from Visily App.tsx files across all 6 pages
+- Buttons: "Đăng nhập", "Tạo đề mới", "Xác nhận", "Thử lại", "Tải xuống"
+- Labels: "Tên kì thi", "Môn học", "Thời gian (phút)", "Số đề cần trộn"
+- Messages: "Đã bắt đầu xử lý đề thi", "Xem trước kết quả phân tích"
+- Status: "Chờ xử lý", "Đang trích xuất", "Đang phân tích", "Hoàn thành", "Thất bại"
+
+**Icon Strategy** (per clarifications Q4):
+- Standard icons: `@iconify/react` library (already installed)
+  - Examples: `lucide:search`, `lucide:calendar`, `lucide:download`, `lucide:chevron-down`
+- Custom logo: Extract 3-layer SVG from Visily exports as `src/components/ui/SiroMixLogo.tsx`
+
+**Asset Copying**:
+- Copy `html/SiroMix - Homepage/assets/IMG_1.webp` to `frontend/public/assets/IMG_1.webp`
+- Reference in mock user avatar: `/assets/IMG_1.webp`
 
 **Alternatives Considered**:
-- Option: Fetch from JSON file → Rejected: Adds HTTP request overhead, TypeScript support requires extra setup
-- Option: Use faker.js → Rejected: Generates random data, makes testing unpredictable, FR-046 specifies "configurable" not "random"
+- ❌ English content with placeholder user → Rejected: Clarifications Q2 requires Vietnamese matching Visily
+- ❌ Generic "John Doe" → Rejected: Clarifications Q3 requires Trieu Kiem from Visily
+- ❌ Fetch from JSON file → Rejected: Adds HTTP request overhead, TypeScript support requires extra setup
+- ✅ Hardcoded TypeScript with Vietnamese + Trieu Kiem → Matches clarifications, type-safe, easy to use
 
 ---
 
@@ -305,12 +392,21 @@ export const mockQuestions: Question[] = [
 
 | Research Area | Decision | Key Rationale |
 |---------------|----------|---------------|
-| Design Tokens | Extract from Visily HTML, centralize in tokens.ts | Visual consistency (FR-056), theme-ability (NFR-011) |
+| Design Tokens | Extract from Visily HTML with exact values: purple #9a94de, Inter font, per-page spacing | Visual consistency (FR-056), clarifications Q1/Q5 (preserve exact values) |
 | Component Architecture | Atomic Design, bottom-up order | FR-048 mandate, reusability (FR-055) |
 | State Management | Zustand with localStorage persistence | Lightweight, TypeScript-friendly, persistence (FR-045) |
 | Pipeline Simulation | Timer-based state machine, configurable durations | FR-017, FR-019, testable (NFR-007) |
 | Form Validation | React Hook Form + Zod | Performance, type safety, inline feedback (NFR-003) |
 | Component Testing | Vitest + React Testing Library | Fast, user-behavior focused, Principle IX |
-| Mock Data | Hardcoded TypeScript with factory functions | Type safety, configurable (FR-046), easy replacement |
+| Mock Data | Hardcoded TypeScript with Trieu Kiem user + Vietnamese content from Visily | Clarifications Q2/Q3 (Vietnamese, Trieu Kiem), type safety (FR-046) |
+| Icons | @iconify/react for standard + custom SVG logo component | Clarifications Q4, leverages installed package |
+| Language | Vietnamese content constants extracted from Visily App.tsx files | Clarifications Q2 (all UI in Vietnamese) |
+
+**Clarifications Compliance**:
+- ✅ Q1: Purple brand #9a94de + exact Visily layouts per page → Design tokens + contracts
+- ✅ Q2: Vietnamese UI text → Content constants + mock questions in Vietnamese
+- ✅ Q3: Trieu Kiem user → Mock user data with university email and Visily avatar
+- ✅ Q4: @iconify + custom logo → Icon strategy documented
+- ✅ Q5: Preserve exact values per page → Per-page spacing/shadows/radius documented
 
 All decisions align with constitutional principles (Schema-First, Testing Mandatory) and FR-048 bottom-up implementation mandate.

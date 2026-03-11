@@ -1,7 +1,23 @@
 /**
- * T072: StatusBadge component.
+ * StatusBadge Component
  * 
- * Color-coded badges for task status (queued/running/completed/failed).
+ * Color-coded badges for task status with Vietnamese labels.
+ * 
+ * @param {StatusBadgeProps} props - Component props
+ * @param {TaskStatus} props.status - Task status ('queued' | 'running' | 'completed' | 'failed')
+ * @param {string} props.className - Additional CSS classes
+ * 
+ * @example
+ * ```tsx
+ * // Display task status in table
+ * <StatusBadge status={task.status} />
+ * 
+ * // Vietnamese labels:
+ * // - 'queued': "Chờ xử lý" (gray)
+ * // - 'running': "Đang xử lý" (blue)
+ * // - 'completed': "Hoàn thành" (green)
+ * // - 'failed': "Thất bại" (red)
+ * ```
  */
 
 import React from 'react';

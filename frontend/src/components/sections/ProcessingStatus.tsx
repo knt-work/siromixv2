@@ -1,8 +1,35 @@
 /**
  * ProcessingStatus Section Component
  * 
- * Displays processing status with badge, progress bar, logs timeline, and retry button.
+ * Displays processing status with Vietnamese labels, badge, progress bar, logs timeline, and retry button.
  * Part of Phase 8: User Story 6 - Exam Detail View & Retry
+ * 
+ * @param {ProcessingStatusProps} props - Component props
+ * @param {Task} props.task - Task object with status, current_stage, and progress
+ * @param {TaskLog[]} props.logs - Array of task log entries for timeline
+ * @param {() => void} props.onRetry - Callback when retry button is clicked
+ * @param {boolean} props.showRetryButton - Show retry button (only for failed tasks)
+ * 
+ * @example
+ * ```tsx
+ * // Task detail page status section
+ * <ProcessingStatus
+ *   task={task}
+ *   logs={task.logs}
+ *   onRetry={handleRetry}
+ *   showRetryButton={task.status === 'failed'}
+ * />
+ * ```
+ * 
+ * @note
+ * Vietnamese stage labels:
+ * - "Chờ xử lý" - Pending
+ * - "Trích xuất" - Extracting
+ * - "Đọc hiểu" - Understanding
+ * - "Xác nhận" - Awaiting confirmation
+ * - "Trộn đề" - Shuffling
+ * - "Tạo files" - Generating files
+ * - "Hoàn thành" - Completed
  */
 
 'use client';

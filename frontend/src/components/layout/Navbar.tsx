@@ -97,6 +97,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <div
                   className="fixed inset-0 z-10"
                   onClick={() => setIsDropdownOpen(false)}
+                  onKeyDown={(e) => e.key === 'Escape' && setIsDropdownOpen(false)}
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Đóng menu"
                 />
                 
                 {/* Menu */}

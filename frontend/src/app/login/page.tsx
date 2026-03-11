@@ -134,7 +134,7 @@ export default function LoginPage() {
 
         <div className="w-full border-t border-[#dee1e6]/40 pt-6 pb-6 text-center">
           <p className="text-sm text-[#565d6d]">
-            Cần hỗ trợ? <a href="#" className="text-[#9A94DE] font-medium hover:underline">Liên hệ đội ngũ hỗ trợ</a>
+            Cần hỗ trợ? <a href="/support" className="text-[#9A94DE] font-medium hover:underline">Liên hệ đội ngũ hỗ trợ</a>
           </p>
         </div>
       </div>

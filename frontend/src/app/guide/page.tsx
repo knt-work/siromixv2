@@ -35,7 +35,7 @@ export default function UserGuidePage() {
           
           <h3 className="text-xl font-semibold text-gray-800 mb-3">1. Sign In</h3>
           <p className="text-gray-700 mb-4">
-            Click the "Sign in with Google" button in the navigation bar to authenticate with 
+            Click the &ldquo;Sign in with Google&rdquo; button in the navigation bar to authenticate with 
             your university Google account. This simulates the OAuth flow that will be used in 
             the production version.
           </p>
@@ -52,11 +52,11 @@ export default function UserGuidePage() {
 
           <h3 className="text-xl font-semibold text-gray-800 mb-3">3. Create a New Exam</h3>
           <p className="text-gray-700 mb-4">
-            Click "Create New Exam" and fill out the metadata form with:
+            Click &ldquo;Create New Exam&rdquo; and fill out the metadata form with:
           </p>
           <ul className="list-disc list-inside text-gray-700 mb-4 space-y-1">
             <li><strong>Academic Year</strong>: Format YYYY-YYYY (e.g., 2023-2024)</li>
-            <li><strong>Exam Name</strong>: Descriptive name (e.g., "Midterm Exam")</li>
+            <li><strong>Exam Name</strong>: Descriptive name (e.g., &ldquo;Midterm Exam&rdquo;)</li>
             <li><strong>Subject</strong>: Course name or code</li>
             <li><strong>Duration</strong>: Exam duration in minutes (1-300)</li>
             <li><strong>Number of Versions</strong>: How many randomized versions to generate (1-10)</li>
@@ -148,7 +148,7 @@ export default function UserGuidePage() {
         <section className="mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Task Management</h2>
           <p className="text-gray-700 mb-4">
-            Navigate to the "Tasks" page to view all your exam processing tasks. You can:
+            Navigate to the &ldquo;Tasks&rdquo; page to view all your exam processing tasks. You can:
           </p>
           <ul className="list-disc list-inside text-gray-700 mb-4 space-y-1">
             <li>View task status and progress in real-time</li>

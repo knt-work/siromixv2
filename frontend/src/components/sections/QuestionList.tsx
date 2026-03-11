@@ -1,8 +1,39 @@
 /**
  * QuestionList Component
  * 
- * Displays a list of extracted questions with answer information and confidence levels.
+ * Displays a list of extracted questions with Vietnamese labels, answer information and confidence levels.
  * Matches the exact design from html/SiroMix - Exam Analysis Result/src/App.tsx
+ * 
+ * @param {QuestionListProps} props - Component props
+ * @param {Question[]} props.questions - Array of question objects to display
+ * @param {'compact' | 'detailed'} props.variant - Display style (default: 'detailed')
+ *   - 'compact': Simple list with question number and text
+ *   - 'detailed': Full table with confidence badges and answer details
+ * @param {boolean} props.editable - Enable edit mode (not yet implemented)
+ * @param {(question: Question) => void} props.onQuestionClick - Callback when question is clicked
+ * 
+ * @example
+ * ```tsx
+ * // Detailed view with Vietnamese confidence labels
+ * <QuestionList 
+ *   questions={extractedQuestions}
+ *   variant="detailed"
+ *   onQuestionClick={(q) => console.log('Clicked question:', q.question_number)}
+ * />
+ * 
+ * // Compact preview list
+ * <QuestionList 
+ *   questions={task.questions.slice(0, 5)}
+ *   variant="compact"
+ * />
+ * ```
+ * 
+ * @note
+ * Vietnamese labels used:
+ * - "STT" - Question number (Số thứ tự)
+ * - "Câu hỏi" - Question text
+ * - "Đáp án" - Correct answer
+ * - "Độ tin cậy" - Confidence level
  */
 
 import React from 'react';
@@ -44,11 +75,20 @@ export const QuestionList: React.FC<QuestionListProps> = ({
   if (variant === 'compact') {
     // Compact variant - simple numbered list
     return (
-      <ol className="space-y-2">
-        {questions.map((question) => (
-          <li
+      <div className="space-y-2">
+        {questions.map((question, index) => (
+          <div
             key={question.question_id}
             onClick={() => onQuestionClick?.(question)}
+            onKeyDown={(e) => {
+              if ((e.key === 'Enter' || e.key === ' ') && onQuestionClick) {
+                e.preventDefault();
+                onQuestionClick(question);
+              }
+            }}
+            role="button"
+            tabIndex={onQuestionClick ? 0 : undefined}
+            aria-label={`Câu hỏi ${question.question_number}`}
             className={cn(
               'p-3 border border-[#dee1e6] rounded-md',
               onQuestionClick && 'cursor-pointer hover:bg-gray-50 transition-colors'
@@ -66,9 +106,9 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                 </div>
               </div>
             </div>
-          </li>
+          </div>
         ))}
-      </ol>
+      </div>
     );
   }
 
@@ -93,6 +133,15 @@ export const QuestionList: React.FC<QuestionListProps> = ({
             <div
               key={question.question_id}
               onClick={() => onQuestionClick?.(question)}
+              onKeyDown={(e) => {
+                if ((e.key === 'Enter' || e.key === ' ') && onQuestionClick) {
+                  e.preventDefault();
+                  onQuestionClick(question);
+                }
+              }}
+              role={onQuestionClick ? "button" : undefined}
+              tabIndex={onQuestionClick ? 0 : undefined}
+              aria-label={`Câu hỏi ${question.question_number}`}
               className={cn(
                 'flex items-center px-4 py-4 transition-colors',
                 onQuestionClick && 'cursor-pointer hover:bg-gray-50'

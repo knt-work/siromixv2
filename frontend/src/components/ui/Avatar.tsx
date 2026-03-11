@@ -30,7 +30,7 @@ export const Avatar: React.FC<AvatarProps> = ({
   // Get initials from alt text or fallbackText
   const getInitials = (text: string): string => {
     const words = text.trim().split(/\s+/);
-    if (words.length >= 2) {
+    if (words.length >= 2 && words[0] && words[1]) {
       return `${words[0][0]}${words[1][0]}`.toUpperCase();
     }
     return text.substring(0, 2).toUpperCase();

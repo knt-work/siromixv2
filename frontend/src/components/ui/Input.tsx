@@ -3,6 +3,37 @@
  * 
  * Form input element with multiple variants, sizes, and states.
  * Supports icons, error states, and full-width layout.
+ * 
+ * @param {InputProps} props - Component props
+ * @param {'default' | 'filled' | 'outlined'} props.variant - Input style variant (default: 'default')
+ * @param {'sm' | 'md' | 'lg'} props.size - Input size (default: 'md')
+ * @param {boolean} props.hasError - Show error state with red border (default: false)
+ * @param {React.ReactNode} props.leftIcon - Icon displayed on the left side
+ * @param {React.ReactNode} props.rightIcon - Icon displayed on the right side
+ * @param {boolean} props.fullWidth - Make input take full width of container (default: false)
+ * @param {string} props.placeholder - Placeholder text (Vietnamese: "Nhập tên đề thi...", "Tìm kiếm...")
+ * 
+ * @example
+ * ```tsx
+ * // Basic input with Vietnamese placeholder
+ * <Input 
+ *   placeholder="Nhập tên đề thi..." 
+ *   value={examName}
+ *   onChange={(e) => setExamName(e.target.value)}
+ * />
+ * 
+ * // Input with error state
+ * <Input 
+ *   hasError={!!errors.examName}
+ *   placeholder="Tên đề thi (bắt buộc)"
+ * />
+ * 
+ * // Search input with icon
+ * <Input 
+ *   leftIcon={<Icon icon="mdi:magnify" />}
+ *   placeholder="Tìm kiếm đề thi..."
+ * />
+ * ```
  */
 
 import React from 'react';

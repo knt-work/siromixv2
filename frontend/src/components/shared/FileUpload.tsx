@@ -1,8 +1,38 @@
 /**
  * FileUpload Molecule Component
  * 
- * Drag-and-drop file upload with validation and preview.
- * Supports .doc and .docx files up to 20MB with Vietnamese UI.
+ * Drag-and-drop file upload with Vietnamese UI, validation and preview.
+ * Supports .doc and .docx files up to 20MB.
+ * 
+ * @param {FileUploadProps} props - Component props
+ * @param {(files: File[]) => void} props.onChange - Callback when files are selected
+ * @param {string} props.error - Error message to display (Vietnamese: "File quá lớn", "Định dạng không hợp lệ")
+ * @param {boolean} props.disabled - Disable upload interaction (default: false)
+ * @param {File[]} props.currentFiles - Currently selected files to show in preview
+ * @param {string} props.accept - Accepted file types (default: '.doc,.docx')
+ * @param {number} props.maxSize - Maximum file size in bytes (default: 20MB)
+ * @param {boolean} props.multiple - Allow multiple file selection (default: true)
+ * 
+ * @example
+ * ```tsx
+ * // Single file upload for exam creation
+ * <FileUpload
+ *   onChange={(files) => setSelectedFile(files[0])}
+ *   error={fileError}
+ *   accept=".doc,.docx"
+ *   maxSize={20 * 1024 * 1024}
+ *   multiple={false}
+ *   currentFiles={selectedFile ? [selectedFile] : []}
+ * />
+ * ```
+ * 
+ * @note
+ * Vietnamese UI text:
+ * - "Kéo thả file vào đây hoặc" - Drag and drop instruction
+ * - "Chọn file" - Browse button text
+ * - "Hỗ trợ: .doc, .docx (tối đa 20MB)" - Format instruction
+ * - "File quá lớn. Vui lòng chọn file nhỏ hơn 20MB" - Size error
+ * - "Định dạng file không được hỗ trợ" - Format error
  */
 
 import React, { useState, useRef } from 'react';
@@ -107,10 +137,19 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       {/* Upload area */}
       <div
         onClick={handleClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleClick();
+          }
+        }}
         onDragEnter={handleDragEnter}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
+        role="button"
+        tabIndex={0}
+        aria-label="Tải tệp lên"
         className={`
           h-40 rounded-md border-2 border-dashed transition-all cursor-pointer
           flex flex-col items-center justify-center gap-3

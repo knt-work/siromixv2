@@ -1,10 +1,57 @@
 /**
  * Datatable Component
  * 
- * Generic table component with pagination, sorting, and row click support.
+ * Generic table component with Vietnamese labels, pagination, sorting, and row click support.
+ * Optimized with React.memo and useMemo for large datasets (20+ rows).
+ * 
+ * @param {DatatableProps<T>} props - Component props
+ * @param {T[]} props.data - Array of data items to display in table
+ * @param {Column<T>[]} props.columns - Column definitions with headers and render functions
+ * @param {(item: T) => string} props.keyExtractor - Function to extract unique key from each item
+ * @param {React.ReactNode} props.emptyState - Content to show when table is empty (Vietnamese: "Không có dữ liệu")
+ * @param {boolean} props.loading - Show loading skeleton (default: false)
+ * @param {(item: T) => void} props.onRowClick - Callback when row is clicked (for navigation)
+ * @param {PaginationConfig} props.pagination - Pagination configuration
+ * @param {SortingConfig} props.sorting - Sorting configuration
+ * @param {string} props.className - Additional CSS classes
+ * 
+ * @example
+ * ```tsx
+ * // Task management table with Vietnamese headers
+ * const columns: Column<Task>[] = [
+ *   { key: 'file_name', header: 'Tên file', sortable: true },
+ *   { key: 'status', header: 'Trạng thái', render: (task) => <StatusBadge status={task.status} /> },
+ *   { key: 'created_at', header: 'Ngày tạo', render: (task) => formatDate(task.created_at) },
+ * ];
+ * 
+ * <Datatable
+ *   data={tasks}
+ *   columns={columns}
+ *   keyExtractor={(task) => task.task_id}
+ *   emptyState={<p>Không có đề thi nào</p>}
+ *   onRowClick={(task) => router.push(`/tasks/${task.task_id}`)}
+ *   pagination={{
+ *     currentPage: 1,
+ *     pageSize: 10,
+ *     totalItems: tasks.length,
+ *     onPageChange: setCurrentPage
+ *   }}
+ *   sorting={{
+ *     sortBy: 'created_at',
+ *     sortOrder: 'desc',
+ *     onSortChange: handleSort
+ *   }}
+ * />
+ * ```
+ * 
+ * @note
+ * Vietnamese pagination labels:
+ * - "Trang X/Y" - Page numbering
+ * - "Trước" - Previous button
+ * - "Sau" - Next button
  */
 
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { Icon } from '@iconify/react';
 import { cn } from '@/lib/utils/cn';
 
@@ -42,7 +89,13 @@ export interface DatatableProps<T> {
   className?: string;
 }
 
-export function Datatable<T>({
+/**
+ * Datatable Component (Memoized)
+ * 
+ * Optimized for rendering 20+ tasks efficiently.
+ * Memoization prevents unnecessary re-renders when parent state changes.
+ */
+export const Datatable = React.memo(function Datatable<T>({
   data,
   columns,
   keyExtractor,
@@ -53,40 +106,54 @@ export function Datatable<T>({
   sorting,
   className,
 }: DatatableProps<T>) {
-  const totalPages = pagination
-    ? Math.ceil(pagination.totalItems / pagination.pageSize)
-    : 1;
+  // Memoize total pages calculation
+  const totalPages = useMemo(
+    () => (pagination ? Math.ceil(pagination.totalItems / pagination.pageSize) : 1),
+    [pagination?.totalItems, pagination?.pageSize]
+  );
 
-  const handleRowClick = (item: T) => {
-    if (onRowClick) {
-      onRowClick(item);
-    }
-  };
+  // Memoize row click handler
+  const handleRowClick = useCallback(
+    (item: T) => {
+      if (onRowClick) {
+        onRowClick(item);
+      }
+    },
+    [onRowClick]
+  );
 
-  const handleSort = (key: string, sortable?: boolean) => {
-    if (sortable && sorting) {
-      sorting.onSortChange(key);
-    }
-  };
+  // Memoize sort handler
+  const handleSort = useCallback(
+    (key: string, sortable?: boolean) => {
+      if (sortable && sorting) {
+        sorting.onSortChange(key);
+      }
+    },
+    [sorting]
+  );
 
-  const getSortIcon = (key: string, sortable?: boolean) => {
-    if (!sortable || !sorting) return null;
+  // Memoize sort icon renderer
+  const getSortIcon = useCallback(
+    (key: string, sortable?: boolean) => {
+      if (!sortable || !sorting) return null;
 
-    if (sorting.sortBy !== key) {
-      return (
-        <Icon
-          icon="lucide:chevrons-up-down"
-          className="w-4 h-4 text-gray-400"
-        />
+      if (sorting.sortBy !== key) {
+        return (
+          <Icon
+            icon="lucide:chevrons-up-down"
+            className="w-4 h-4 text-gray-400"
+          />
+        );
+      }
+
+      return sorting.sortOrder === 'asc' ? (
+        <Icon icon="lucide:chevron-up" className="w-4 h-4 text-[#9a94de]" />
+      ) : (
+        <Icon icon="lucide:chevron-down" className="w-4 h-4 text-[#9a94de]" />
       );
-    }
-
-    return sorting.sortOrder === 'asc' ? (
-      <Icon icon="lucide:chevron-up" className="w-4 h-4 text-[#9a94de]" />
-    ) : (
-      <Icon icon="lucide:chevron-down" className="w-4 h-4 text-[#9a94de]" />
-    );
-  };
+    },
+    [sorting?.sortBy, sorting?.sortOrder]
+  );
 
   const renderEmptyState = () => {
     if (emptyState) return emptyState;
@@ -236,4 +303,4 @@ export function Datatable<T>({
       )}
     </div>
   );
-}
+}) as <T>(props: DatatableProps<T>) => React.ReactElement;

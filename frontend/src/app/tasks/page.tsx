@@ -493,6 +493,15 @@ export default function TasksPage() {
                 <div
                   key={task.task_id}
                   onClick={() => handleRowClick(task)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleRowClick(task);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Xem chi tiết tác vụ ${task.task_id}`}
                   className="cursor-pointer rounded-xl border border-[#dee1e6]/60 bg-white p-4 shadow-sm"
                 >
                   <div className="flex items-start justify-between">

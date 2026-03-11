@@ -53,6 +53,9 @@ export default function CreateExamPage() {
 
       // Use first file for task
       const file = data.files[0];
+      if (!file) {
+        throw new Error('No file uploaded');
+      }
       
       // Create task in store
       const task = createTask(

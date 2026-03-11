@@ -1,12 +1,56 @@
 /**
  * Modal Component
  * 
- * A dialog overlay component with focus trap, body scroll lock, and various accessibility features.
+ * A dialog overlay component with focus trap, body scroll lock, and Vietnamese accessibility features.
+ * 
+ * @param {ModalProps} props - Component props
+ * @param {boolean} props.isOpen - Control modal visibility
+ * @param {() => void} props.onClose - Callback fired when modal is closed
+ * @param {string} props.title - Modal title displayed in header (Vietnamese: "Xác nhận", "Chi tiết đề thi")
+ * @param {'sm' | 'md' | 'lg' | 'xl' | 'full'} props.size - Modal width (default: 'md')
+ * @param {boolean} props.showCloseButton - Show close X button in header (default: true)
+ * @param {boolean} props.closeOnOverlayClick - Close modal when clicking outside (default: true)
+ * @param {boolean} props.closeOnEsc - Close modal when pressing Escape key (default: true)
+ * @param {React.ReactNode} props.children - Modal body content
+ * @param {React.ReactNode} props.footer - Modal footer content (buttons, actions)
+ * 
+ * @example
+ * ```tsx
+ * // Confirmation modal with Vietnamese text
+ * <Modal
+ *   isOpen={showConfirmModal}
+ *   onClose={() => setShowConfirmModal(false)}
+ *   title="Xác nhận xóa đề thi"
+ *   size="sm"
+ *   footer={
+ *     <>
+ *       <Button variant="ghost" onClick={() => setShowConfirmModal(false)}>
+ *         Hủy
+ *       </Button>
+ *       <Button variant="danger" onClick={handleDelete}>
+ *         Xóa
+ *       </Button>
+ *     </>
+ *   }
+ * >
+ *   <p>Bạn có chắc chắn muốn xóa đề thi này không?</p>
+ * </Modal>
+ * 
+ * // Detail view modal
+ * <Modal
+ *   isOpen={showDetails}
+ *   onClose={() => setShowDetails(false)}
+ *   title="Chi tiết câu hỏi"
+ *   size="lg"
+ * >
+ *   <QuestionList questions={selectedQuestions} variant="detailed" />
+ * </Modal>
+ * ```
  */
 
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils/cn';
@@ -36,6 +80,14 @@ export const Modal: React.FC<ModalProps> = ({
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const titleId = `modal-title-${useRef(Math.random().toString(36).substring(7)).current}`;
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  // Manage animation state
+  useEffect(() => {
+    if (isOpen) {
+      setIsAnimating(true);
+    }
+  }, [isOpen]);
 
   // Handle Escape key
   useEffect(() => {
@@ -114,8 +166,19 @@ export const Modal: React.FC<ModalProps> = ({
 
   const modalContent = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      className={cn(
+        'fixed inset-0 z-50 flex items-center justify-center bg-black/50',
+        'transition-opacity duration-300',
+        isAnimating ? 'opacity-100' : 'opacity-0'
+      )}
       onClick={handleOverlayClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape' && closeOnEsc) {
+          onClose();
+        }
+      }}
+      role="presentation"
+      tabIndex={-1}
     >
       <div
         ref={modalRef}
@@ -125,6 +188,8 @@ export const Modal: React.FC<ModalProps> = ({
         className={cn(
           'w-full bg-white rounded-xl shadow-lg',
           'flex flex-col max-h-[90vh]',
+          'transition-all duration-300',
+          isAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95',
           sizeStyles[size]
         )}
       >

@@ -197,11 +197,11 @@ export default function HomePage() {
       <footer className="bg-white border-t border-[#dee1e6]/40 px-4 lg:px-[144px] py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
         <span className="text-sm text-[#565d6d]">© 2026 SiroMix — All rights reserved.</span>
         <div className="flex items-center gap-4 text-sm text-[#565d6d]">
-          <a href="#" className="hover:text-[#171a1f] transition-colors">Terms</a>
+          <a href="/terms" className="hover:text-[#171a1f] transition-colors">Terms</a>
           <span className="text-[#dee1e6]">•</span>
-          <a href="#" className="hover:text-[#171a1f] transition-colors">Privacy</a>
+          <a href="/privacy" className="hover:text-[#171a1f] transition-colors">Privacy</a>
           <span className="text-[#dee1e6]">•</span>
-          <a href="#" className="hover:text-[#171a1f] transition-colors">Contact</a>
+          <a href="/contact" className="hover:text-[#171a1f] transition-colors">Contact</a>
         </div>
       </footer>
     </div>

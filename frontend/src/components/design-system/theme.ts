@@ -81,6 +81,25 @@ export const theme = {
     popover: zIndex.popover.toString(),
     tooltip: zIndex.tooltip.toString(),
   },
+
+  keyframes: {
+    shimmer: {
+      '0%': {
+        backgroundPosition: '-1000px 0',
+      },
+      '100%': {
+        backgroundPosition: '1000px 0',
+      },
+    },
+  },
+
+  animation: {
+    shimmer: 'shimmer 2s infinite linear',
+  },
+
+  backgroundImage: {
+    shimmer: 'linear-gradient(to right, #f5f6f7 0%, #e8eaed 20%, #f5f6f7 40%, #f5f6f7 100%)',
+  },
 } as const;
 
 export default theme;

@@ -46,7 +46,7 @@ export default function RootLayout({
 
   return (
     <html lang="vi" className={inter.variable}>
-      <body className="min-h-screen bg-background-main font-sans antialiased">
+      <body className={`min-h-screen bg-background-main font-sans antialiased ${inter.className}`}>
         <Navbar user={user} onLogin={handleLogin} onLogout={handleLogout} />
         <main>{children}</main>
       </body>

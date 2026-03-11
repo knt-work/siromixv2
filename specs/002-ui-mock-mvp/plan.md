@@ -3,7 +3,7 @@
 **Branch**: `002-ui-mock-mvp` | **Date**: 2026-03-10 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `/specs/002-ui-mock-mvp/spec.md`
 
-**Note**: This plan follows bottom-up architecture approach extracting exact Visily designs from html/ exports per clarifications session.
+**Note**: This plan follows bottom-up architecture approach extracting exact Visily designs from html/ exports per clarifications session. **Critical Implementation Requirement**: Each Next.js page MUST implement a 1:1 exact match of its corresponding html/ reference folder design—layout structure, Vietnamese text content, spacing, colors, and all visual details must be identical to the reference HTML. No design interpretation or modification allowed.
 
 ## Summary
 

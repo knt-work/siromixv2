@@ -1,259 +1,181 @@
 /**
- * T068: TaskProgress page.
+ * Exam Detail Page
  * 
- * Task progress page with status, progress bar, stage indicator, log viewer, retry button.
- * T078: Connected to polling with useTaskPolling hook.
- * T079: Connected retry button to retryTask API.
- * T080: Error handling for all API calls.
- * T081: Loading states.
+ * Phase 8 - T092: Exam Detail View with Retry
+ * Displays comprehensive task details with metadata, processing status, and extracted questions.
+ * Matches exact design from html/SiroMix - Exam Detail/
  */
 
 'use client';
 
-import React, { useState } from 'react';
-import { useSession } from 'next-auth/react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useTaskPolling } from '@/hooks/useTaskPolling';
-import { retryTask } from '@/lib/api/tasks';
-import StatusBadge from '@/components/StatusBadge';
-import ProgressBar from '@/components/ProgressBar';
-import StageIndicator from '@/components/StageIndicator';
-import LogViewer from '@/components/LogViewer';
+import { Icon } from '@iconify/react';
+import { AuthGuard } from '@/components/layout/AuthGuard';
+import { ExamMetadata } from '@/components/sections/ExamMetadata';
+import { ProcessingStatus } from '@/components/sections/ProcessingStatus';
+import { QuestionList } from '@/components/sections/QuestionList';
+import { useTaskStore } from '@/lib/state/task-store';
+import type { TaskStatus } from '@/types';
 
-export default function TaskProgressPage() {
-  const { data: session } = useSession();
+// Processing statuses that require polling
+const PROCESSING_STATUSES: TaskStatus[] = [
+  'extracting',
+  'understanding',
+  'shuffling',
+  'generating',
+];
+
+function ExamDetailPageContent() {
   const params = useParams();
   const router = useRouter();
   const taskId = params?.taskId as string;
+  
+  const task = useTaskStore((state) =>
+    state.tasks.find((t) => t.task_id === taskId)
+  );
+  const retryTask = useTaskStore((state) => state.retryTask);
+  const getTaskLogs = useTaskStore((state) => state.getTaskLogs);
+  
+  const [, forceUpdate] = useState(0);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Real-time polling for processing tasks (T096)
+  useEffect(() => {
+    if (task && PROCESSING_STATUSES.includes(task.status)) {
+      // Poll every 3 seconds
+      pollingIntervalRef.current = setInterval(() => {
+        forceUpdate((n) => n + 1);
+      }, 3000);
+    } else {
+      // Clear polling if not processing
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
+  }, [task?.status]);
+
+  // Handle retry with debouncing (T093)
   const [retrying, setRetrying] = useState(false);
-  const [retryError, setRetryError] = useState<string | null>(null);
-
-  // T078: Connect TaskProgress page to polling
-  const { task, loading, error, refetch, startPolling } = useTaskPolling({
-    taskId,
-    idToken: session?.idToken || null,
-    interval: 2500, // 2.5 seconds
-    enabled: !!session?.idToken,
-  });
-
-  // T079: Connect retry button to retryTask
   const handleRetry = async () => {
-    if (!session?.idToken) {
-      setRetryError('No authentication token available. Please sign in again.');
-      return;
-    }
-
-    if (!task) {
-      setRetryError('Task not found');
-      return;
-    }
-
+    if (!task || retrying) return;
+    
     setRetrying(true);
-    setRetryError(null);
-
     try {
-      await retryTask(taskId, session.idToken);
-      // Restart polling to track the retried task
-      startPolling();
-    } catch (err) {
-      setRetryError(err instanceof Error ? err.message : 'Failed to retry task');
+      retryTask(taskId);
+      // Small delay for UI feedback
+      await new Promise((resolve) => setTimeout(resolve, 500));
     } finally {
       setRetrying(false);
     }
   };
 
-  // T080: Error handling
-  if (!session) {
+  // Task not found
+  if (!task) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-[#f9fafb]">
         <div className="text-center">
-          <p className="text-gray-600">Please sign in to view this task</p>
+          <Icon icon="lucide:file-question" className="mx-auto mb-4 h-16 w-16 text-[#565d6d]" />
+          <h2 className="mb-2 text-xl font-semibold">Không tìm thấy đề thi</h2>
+          <p className="mb-6 text-sm text-[#565d6d]">
+            Đề thi với ID {taskId} không tồn tại hoặc đã bị xóa.
+          </p>
           <button
-            onClick={() => router.push('/')}
-            className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
+            onClick={() => router.push('/tasks')}
+            className="rounded-md bg-[#9a94de] px-4 py-2 text-sm font-medium text-white shadow-sm hover:opacity-90"
           >
-            Go to Home
+            Quay về danh sách
           </button>
         </div>
       </div>
     );
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white rounded-lg shadow p-8 max-w-md">
-          <h2 className="text-xl font-semibold text-red-600 mb-4">Error Loading Task</h2>
-          <p className="text-gray-700 mb-4">{error}</p>
-          <div className="flex gap-3">
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
-            >
-              Back to Dashboard
-            </button>
-            <button
-              onClick={() => refetch()}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Retry
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // T081: Loading states
-  if (loading || !task) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <svg className="animate-spin h-12 w-12 text-blue-600 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <p className="text-gray-600">Loading task...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const canRetry = task.status === 'failed';
-  const isActive = task.status === 'queued' || task.status === 'running';
+  const logs = getTaskLogs(taskId);
+  const showRetryButton = task.status === 'failed';
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-6">
+    <div className="min-h-screen bg-[#f9fafb]">
+      {/* Header */}
+      <div className="border-b border-[#dee1e6] bg-white px-4 py-6 lg:px-[120px]">
+        {/* Breadcrumbs */}
+        <div className="mb-4 flex items-center gap-2 text-sm">
           <button
-            onClick={() => router.push('/dashboard')}
-            className="text-blue-600 hover:text-blue-700 font-medium mb-4 flex items-center gap-2"
+            onClick={() => router.push('/tasks')}
+            className="text-[#565d6d] transition-colors hover:text-[#9a94de]"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Back to Dashboard
+            Tasks
           </button>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Task Progress</h1>
-              <p className="text-sm text-gray-500 mt-1">Task ID: {task.task_id}</p>
+          <Icon icon="lucide:chevron-right" className="h-3.5 w-3.5 text-[#9ba0aa]" />
+          <span className="font-medium text-[#171a1f]">T-{taskId.slice(-4)}</span>
+        </div>
+
+        {/* Page Title */}
+        <div className="mb-6">
+          <h1 className="mb-2 text-3xl font-bold lg:text-4xl">
+            {task.metadata.exam_name} — {task.metadata.subject}
+          </h1>
+          <div className="flex flex-wrap items-center gap-4 text-sm text-[#565d6d]">
+            <div className="flex items-center gap-1.5">
+              <Icon icon="lucide:calendar" className="h-3.5 w-3.5" />
+              <span>Ngày tạo: {new Date(task.created_at).toLocaleDateString('vi-VN')}</span>
             </div>
-            <StatusBadge status={task.status} />
+            <div className="flex items-center gap-1.5">
+              <Icon icon="lucide:clock" className="h-3.5 w-3.5" />
+              <span>Cập nhật: {new Date(task.updated_at).toLocaleDateString('vi-VN')}</span>
+            </div>
           </div>
         </div>
 
-        <div className="space-y-6">
-          {/* Progress Bar */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <ProgressBar progress={task.progress} />
+        {/* Action Buttons */}
+        {task.status === 'completed' && (
+          <div className="flex flex-wrap gap-3">
+            <button className="flex h-10 items-center justify-center gap-2 rounded-md border border-[#dee1e6] bg-white px-4 text-sm font-medium shadow-sm transition-colors hover:bg-[#f3f4f6]">
+              <Icon icon="lucide:eye" className="h-4 w-4" />
+              Xem Inputs
+            </button>
+            <button className="flex h-10 items-center justify-center gap-2 rounded-md bg-[#9a94de] px-4 text-sm font-medium text-white shadow-sm transition-opacity hover:opacity-90"
+            >
+              <Icon icon="lucide:download" className="h-4 w-4" />
+              Tải bộ đề đã trộn
+            </button>
           </div>
+        )}
+      </div>
 
-          {/* Stage Indicator */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Pipeline Stages</h2>
-            <StageIndicator currentStage={task.current_stage} status={task.status} />
-          </div>
+      {/* Main Content */}
+      <div className="mx-auto max-w-[1440px] space-y-6 px-4 py-8 lg:px-[120px]">
+        {/* Section 1: Exam Metadata */}
+        <ExamMetadata metadata={task.metadata} fileName={`task_${taskId}.pdf`} />
 
-          {/* Error Message */}
-          {task.error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <svg className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div className="flex-1">
-                  <h3 className="text-sm font-medium text-red-800">Task Failed</h3>
-                  <p className="text-sm text-red-700 mt-1">{task.error}</p>
-                </div>
-              </div>
-            </div>
-          )}
+        {/* Section 2: Processing Status */}
+        <ProcessingStatus
+          task={task}
+          logs={logs}
+          onRetry={handleRetry}
+          showRetryButton={showRetryButton}
+        />
 
-          {/* Retry Error */}
-          {retryError && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-sm text-red-800">{retryError}</p>
-            </div>
-          )}
-
-          {/* Retry Button */}
-          {canRetry && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <button
-                onClick={handleRetry}
-                disabled={retrying}
-                className="w-full px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {retrying ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Retrying...
-                  </span>
-                ) : (
-                  'Retry Task'
-                )}
-              </button>
-            </div>
-          )}
-
-          {/* Active Task Indicator */}
-          {isActive && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-center gap-3">
-                <svg className="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <p className="text-sm text-blue-800">
-                  {task.status === 'queued' ? 'Task queued, waiting to start...' : 'Task is running, updating every 2-3 seconds...'}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Logs */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Logs</h2>
-            <LogViewer logs={task.logs || []} />
-          </div>
-
-          {/* Metadata */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Metadata</h2>
-            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <div>
-                <dt className="font-medium text-gray-500">Created</dt>
-                <dd className="mt-1 text-gray-900">{new Date(task.created_at).toLocaleString()}</dd>
-              </div>
-              <div>
-                <dt className="font-medium text-gray-500">Last Updated</dt>
-                <dd className="mt-1 text-gray-900">{new Date(task.updated_at).toLocaleString()}</dd>
-              </div>
-              <div>
-                <dt className="font-medium text-gray-500">Current Stage</dt>
-                <dd className="mt-1 text-gray-900">{task.current_stage || 'Not started'}</dd>
-              </div>
-              <div>
-                <dt className="font-medium text-gray-500">Retry Counts</dt>
-                <dd className="mt-1 text-gray-900">
-                  {Object.entries(task.retry_count_by_stage).length > 0
-                    ? Object.entries(task.retry_count_by_stage)
-                        .filter(([_, count]) => count > 0)
-                        .map(([stage, count]) => `${stage}: ${count}`)
-                        .join(', ') || 'None'
-                    : 'None'}
-                </dd>
-              </div>
-            </dl>
-          </div>
-        </div>
+        {/* Section 3: Extracted Data (Questions) - TODO: Integrate with backend */}
+        {/* Questions will be fetched separately from backend API in Phase 9 */}
       </div>
     </div>
+  );
+}
+
+export default function ExamDetailPage() {
+  return (
+    <AuthGuard>
+      <ExamDetailPageContent />
+    </AuthGuard>
   );
 }

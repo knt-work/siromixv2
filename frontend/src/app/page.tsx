@@ -34,7 +34,7 @@ export default function HomePage() {
           {/* Left Content */}
           <div className="w-full lg:max-w-[644px]">
             <h1 className="text-[40px] lg:text-[56px] leading-[1.1] font-extrabold text-[#171a1f] tracking-[-1.4px] mb-6">
-              Trộn đề thi nhanh chóng với <span className="text-[#9a94de]">SiroMix</span>
+              Trộn đề thi nhanh chóng bằng <span className="text-[#9a94de]">AI</span> với <span className="text-[#9a94de]">SiroMix</span>
             </h1>
             <p className="text-lg lg:text-[20px] leading-[28px] text-[#565d6d] mb-10">
               Bạn chỉ cần tải lên đề thi Word thô, phần còn lại hãy để SiroMix lo!

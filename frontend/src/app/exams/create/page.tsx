@@ -93,16 +93,15 @@ export default function CreateExamPage() {
           if (currentTask) {
             updateTaskStatus(task.task_id, currentTask.status, progress);
           }
+        },
+        () => {
+          // Callback when 'awaiting' status is reached - redirect to preview page
+          router.push(`/exams/preview/${task.task_id}`);
         }
       ).catch((error) => {
         console.error('Pipeline simulation error:', error);
         addTaskLog(task.task_id, 'ERROR', error.message || 'Có lỗi xảy ra');
       });
-
-      // Redirect to preview page after brief delay
-      setTimeout(() => {
-        router.push(`/exams/preview/${task.task_id}`);
-      }, 2000);
     } catch (error) {
       console.error('Error creating task:', error);
       alert('Có lỗi xảy ra khi tạo nhiệm vụ. Vui lòng thử lại.');

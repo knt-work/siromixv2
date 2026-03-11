@@ -45,7 +45,7 @@ export const UI_TEXT = {
     questionNumber: 'STT',
     question: 'Câu hỏi',
     answer: 'Đáp án',
-    confidence: 'Độ tin cậy',
+    confidence: 'Độ tự tin',
     status: 'Trạng thái',
     progress: 'Tiến độ',
     createdDate: 'Ngày tạo',

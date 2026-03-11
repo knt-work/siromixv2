@@ -17,6 +17,7 @@ export interface Question {
   option_d: string;              // Answer option D
   correct_answer: AnswerOption;  // Correct option
   learning_objective?: string;   // Optional LO tag
+  confidence?: number;           // AI confidence level (0-100)
 }
 
 /**

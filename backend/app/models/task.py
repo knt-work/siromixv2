@@ -66,6 +66,14 @@ class Task(Base):
         comment="Owner of the task"
     )
     
+    # Foreign key to exam (optional)
+    exam_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("exams.exam_id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+        comment="Associated exam (if any)"
+    )
+    
     # Task status
     status: Mapped[TaskStatus] = mapped_column(
         Enum(TaskStatus, name="task_status", native_enum=False),
@@ -128,11 +136,21 @@ class Task(Base):
         back_populates="tasks"
     )
     
+    exam: Mapped["Exam"] = relationship(
+        "Exam",
+        back_populates="tasks"
+    )
+    
     logs: Mapped[list["TaskLog"]] = relationship(
         "TaskLog",
         back_populates="task",
         cascade="all, delete-orphan",
         order_by="TaskLog.timestamp"
+    )
+    
+    artifacts: Mapped[list["Artifact"]] = relationship(
+        "Artifact",
+        back_populates="task"
     )
     
     # Constraints

@@ -77,5 +77,11 @@ class User(Base):
         cascade="all, delete-orphan"
     )
     
+    exams: Mapped[list["Exam"]] = relationship(
+        "Exam",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+    
     def __repr__(self) -> str:
         return f"<User(user_id={self.user_id}, email={self.email})>"

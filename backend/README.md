@@ -153,11 +153,82 @@ Once running, visit:
 
 ### Database Schema
 
-See `specs/001-mvp-foundation/data-model.md` for detailed entity definitions:
+See data model specifications for detailed entity definitions:
 
-- **users**: Google OAuth user accounts
-- **tasks**: Async processing jobs
-- **task_logs**: Structured execution logs
+- **MVP Foundation** (`specs/001-mvp-foundation/data-model.md`):
+  - **users**: Google OAuth user accounts
+  - **tasks**: Async processing jobs
+  - **task_logs**: Structured execution logs
+
+- **Exams & Artifacts** (`specs/003-exams-artifacts-model/data-model.md`):
+  - **exams**: Exam business metadata (name, subject, year, variants, status)
+  - **artifacts**: Generated pipeline outputs (DIJ, question previews, NES, variants, answer matrix)
+  - **tasks.exam_id**: Foreign key linking tasks to parent exam
+
+#### Migration: Adding Exams and Artifacts Tables
+
+The `002_add_exams_and_artifacts_tables` migration adds exam and artifact tracking to the system with backward compatibility for existing tasks:
+
+**Migration Strategy**:
+1. **Step 1**: Creates `exams` and `artifacts` tables, adds `tasks.exam_id` column as NULLABLE
+2. **Step 2**: Data migration - creates "Legacy Import" exam for each user with existing tasks, links all tasks to their user's legacy exam  
+3. **Step 3**: Makes `tasks.exam_id` NOT NULL, adds foreign key constraint with CASCADE delete
+
+**Apply Migration**:
+```bash
+cd backend
+alembic upgrade head
+```
+
+**Rollback Migration**:
+```bash
+cd backend
+alembic downgrade -1
+```
+
+**Test Migration** (requires Docker and PostgreSQL running):
+```bash
+cd backend
+
+# Clean database test
+alembic upgrade head
+
+# Rollback test  
+alembic downgrade -1
+alembic upgrade head
+
+# With existing data test
+# See scripts/test_migration.md for detailed test scenarios
+```
+
+**Verify Tables Created**:
+```bash
+docker exec -it siromix-postgres psql -U siromix -d siromix_v2
+
+\dt  # List all tables - should include exams, artifacts
+\d exams  # Describe exams table structure
+\q
+```
+
+#### Quickstart: Testing Exam/Artifact Features
+
+After applying the migration, use helper scripts to verify functionality:
+
+```bash
+cd backend
+
+# Create test data
+python scripts/create_test_exam.py        # Creates test user and exam
+python scripts/create_test_artifact.py    # Creates test artifact for exam
+
+# Test relationships
+python scripts/test_relationships.py      # Verifies exam→artifacts and user→exams loading
+
+# Test cascade deletion
+python scripts/test_cascade_delete.py     # Verifies DELETE exam → CASCADE artifacts/tasks
+```
+
+See **`specs/003-exams-artifacts-model/quickstart.md`** for comprehensive validation steps, debugging scenarios, and performance testing.
 
 ## Development
 

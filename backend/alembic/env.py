@@ -23,7 +23,7 @@ load_dotenv(dotenv_path=env_path)
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from app.core.database import Base
-from app.models import User, Task, TaskLog  # Import all models
+from app.models import User, Task, TaskLog, Exam, Artifact  # Import all models
 
 # this is the Alembic Config object
 config = context.config

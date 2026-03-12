@@ -10,6 +10,18 @@ from app.schemas.task import (
     TaskStage,
 )
 from app.schemas.task_log import TaskLogResponse, LogLevel
+from app.schemas.exam import (
+    ExamCreate,
+    ExamUpdate,
+    ExamResponse,
+    ExamListResponse,
+)
+from app.schemas.artifact import (
+    ArtifactCreate,
+    ArtifactResponse,
+    ArtifactListResponse,
+    ArtifactsByType,
+)
 
 __all__ = [
     "UserCreate",
@@ -20,4 +32,12 @@ __all__ = [
     "TaskStage",
     "TaskLogResponse",
     "LogLevel",
+    "ExamCreate",
+    "ExamUpdate",
+    "ExamResponse",
+    "ExamListResponse",
+    "ArtifactCreate",
+    "ArtifactResponse",
+    "ArtifactListResponse",
+    "ArtifactsByType",
 ]

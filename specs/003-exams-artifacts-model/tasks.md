@@ -234,7 +234,7 @@
 - [X] T102 Run quickstart.md validation steps: create test exam, create test artifact, query relationships, test cascade delete, verify performance (All validation steps passed successfully)
 - [X] T103 Update backend/README.md with migration instructions and quickstart.md reference
 - [X] T104 [P] Document artifact file path generation utility if needed (per research.md kebab-case pattern) - Created app/core/artifact_paths.py with to_kebab_case(), generate_artifact_path(), and generate_exam_directory() utilities
-- [ ] T105 Commit all changes with message: "feat: Add exams and artifacts tables with task linkage (#003)"
+- [X] T105 Commit all changes with message: "feat: Add exams and artifacts tables with task linkage (#003)"
 
 **Checkpoint**: Feature complete and validated - ready for integration with pipeline
 

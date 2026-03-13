@@ -8,7 +8,7 @@ import asyncio
 from uuid import uuid4
 from sqlalchemy import select
 from app.core.database import AsyncSessionLocal
-from app.models.exam import Exam
+from app.models.exam import Exam, ExamStatus
 from app.models.user import User
 
 
@@ -45,7 +45,7 @@ async def create_test_exam():
             grade_level="Grade 10",
             num_variants=5,
             instructions="Use blue or black pen only. Show all work for partial credit.",
-            status="draft"
+            status=ExamStatus.DRAFT
         )
         db.add(exam)
         await db.commit()

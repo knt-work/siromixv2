@@ -56,7 +56,7 @@ def generate_legacy_exam_for_user(connection, user_id: uuid.UUID) -> uuid.UUID:
             "subject": "Imported",
             "academic_year": "Pre-Migration",
             "num_variants": 1,
-            "status": "completed"
+            "status": "COMPLETED"
         }
     )
     

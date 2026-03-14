@@ -6,7 +6,7 @@ Contract: specs/004-exam-upload-api/contracts/exams_post.md
 """
 
 import pytest
-from httpx import AsyncClient
+from httpx import AsyncClient, ASGITransport
 from unittest.mock import Mock, patch
 from io import BytesIO
 import uuid
@@ -51,7 +51,8 @@ def authenticated_client(test_user: User):
     from app.core.deps import get_current_user
     app.dependency_overrides[get_current_user] = override_get_current_user
     
-    return AsyncClient(app=app, base_url="http://testserver")
+    transport = ASGITransport(app=app)
+    return AsyncClient(transport=transport, base_url="http://testserver")
 
 
 class TestPostExamsSuccess:
@@ -356,7 +357,8 @@ class TestPostExamsAuthenticationErrors:
     ):
         """Test request without JWT token (401 Unauthorized)."""
         # Arrange
-        client = AsyncClient(app=app, base_url="http://testserver")
+        transport = ASGITransport(app=app)
+        client = AsyncClient(transport=transport, base_url="http://testserver")
         data = valid_exam_data
         files = {"file": valid_docx_file}
         
@@ -381,7 +383,8 @@ class TestPostExamsAuthenticationErrors:
     ):
         """Test request with invalid JWT token."""
         # Arrange
-        client = AsyncClient(app=app, base_url="http://testserver")
+        transport = ASGITransport(app=app)
+        client = AsyncClient(transport=transport, base_url="http://testserver")
         data = valid_exam_data
         files = {"file": valid_docx_file}
         headers = {"Authorization": "Bearer invalid.token.here"}

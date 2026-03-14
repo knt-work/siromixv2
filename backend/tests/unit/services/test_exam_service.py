@@ -10,6 +10,7 @@ Tests exam creation with file upload, including:
 import pytest
 import pytest_asyncio
 from unittest.mock import Mock, AsyncMock, patch, MagicMock
+import uuid
 from uuid import uuid4
 from io import BytesIO
 
@@ -237,3 +238,251 @@ class TestExamServiceCreate:
             result = await async_session.execute(select(Exam).where(Exam.exam_id == exam_id))
             exam = result.scalar_one_or_none()
             assert exam.num_variants == 5
+
+
+class TestExamServiceFileValidation:
+    """Test file validation functionality - Phase 4 (User Story 2)."""
+    
+    def test_validate_docx_file_success(self):
+        """Test successful validation of valid DOCX file."""
+        # Arrange
+        service = ExamService(Mock(), Mock())
+        
+        # Create mock DOCX file
+        valid_file = Mock(spec=UploadFile)
+        valid_file.filename = "exam.docx"
+        valid_file.content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        valid_file.size = 10 * 1024 * 1024  # 10MB
+        
+        # Act & Assert - should not raise exception
+        service.validate_docx_file(valid_file)
+    
+    def test_validate_docx_file_pdf_format(self):
+        """Test validation rejects PDF files."""
+        # Arrange
+        service = ExamService(Mock(), Mock())
+        
+        # Create mock PDF file
+        pdf_file = Mock(spec=UploadFile)
+        pdf_file.filename = "exam.pdf"
+        pdf_file.content_type = "application/pdf"
+        pdf_file.size = 5 * 1024 * 1024  # 5MB
+        
+        # Act & Assert
+        with pytest.raises(HTTPException) as exc_info:
+            service.validate_docx_file(pdf_file)
+        
+        assert exc_info.value.status_code == 400
+        assert "docx" in exc_info.value.detail.lower() or "format" in exc_info.value.detail.lower()
+    
+    def test_validate_docx_file_txt_format(self):
+        """Test validation rejects TXT files."""
+        # Arrange
+        service = ExamService(Mock(), Mock())
+        
+        # Create mock TXT file
+        txt_file = Mock(spec=UploadFile)
+        txt_file.filename = "exam.txt"
+        txt_file.content_type = "text/plain"
+        txt_file.size = 1 * 1024 * 1024  # 1MB
+        
+        # Act & Assert
+        with pytest.raises(HTTPException) as exc_info:
+            service.validate_docx_file(txt_file)
+        
+        assert exc_info.value.status_code == 400
+        assert "docx" in exc_info.value.detail.lower() or "format" in exc_info.value.detail.lower()
+    
+    def test_validate_docx_file_wrong_extension(self):
+        """Test validation rejects files without .docx extension."""
+        # Arrange
+        service = ExamService(Mock(), Mock())
+        
+        # Create mock file with wrong extension but correct MIME type
+        file = Mock(spec=UploadFile)
+        file.filename = "exam.doc"  # Old Word format
+        file.content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        file.size = 5 * 1024 * 1024  # 5MB
+        
+        # Act & Assert
+        with pytest.raises(HTTPException) as exc_info:
+            service.validate_docx_file(file)
+        
+        assert exc_info.value.status_code == 400
+        assert "docx" in exc_info.value.detail.lower() or "extension" in exc_info.value.detail.lower()
+    
+    def test_validate_docx_file_exceeds_size_limit(self):
+        """Test validation rejects files exceeding 50MB limit."""
+        # Arrange
+        service = ExamService(Mock(), Mock())
+        
+        # Create mock file exceeding size limit
+        large_file = Mock(spec=UploadFile)
+        large_file.filename = "exam.docx"
+        large_file.content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        large_file.size = 51 * 1024 * 1024  # 51MB (exceeds 50MB limit)
+        
+        # Act & Assert
+        with pytest.raises(HTTPException) as exc_info:
+            service.validate_docx_file(large_file)
+        
+        assert exc_info.value.status_code == 400
+        assert "50" in exc_info.value.detail or "size" in exc_info.value.detail.lower()
+    
+    def test_validate_docx_file_missing_filename(self):
+        """Test validation handles missing filename."""
+        # Arrange
+        service = ExamService(Mock(), Mock())
+        
+        # Create mock file with no filename
+        file = Mock(spec=UploadFile)
+        file.filename = None
+        file.content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        file.size = 5 * 1024 * 1024
+        
+        # Act & Assert
+        with pytest.raises(HTTPException) as exc_info:
+            service.validate_docx_file(file)
+        
+        assert exc_info.value.status_code == 400
+    
+    def test_validate_docx_file_octet_stream_content_type(self):
+        """Test validation accepts application/octet-stream (some browsers send this for DOCX)."""
+        # Arrange
+        service = ExamService(Mock(), Mock())
+        
+        # Create mock file with octet-stream content type but .docx extension
+        file = Mock(spec=UploadFile)
+        file.filename = "exam.docx"
+        file.content_type = "application/octet-stream"
+        file.size = 5 * 1024 * 1024  # 5MB
+        
+        # Act & Assert - should not raise exception
+        service.validate_docx_file(file)
+    
+    def test_validate_docx_file_zero_size(self):
+        """Test validation rejects zero-byte files."""
+        # Arrange
+        service = ExamService(Mock(), Mock())
+        
+        # Create mock file with zero size
+        file = Mock(spec=UploadFile)
+        file.filename = "exam.docx"
+        file.content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        file.size = 0  # Zero bytes
+        
+        # Act & Assert
+        with pytest.raises(HTTPException) as exc_info:
+            service.validate_docx_file(file)
+        
+        assert exc_info.value.status_code == 400
+        assert "empty" in exc_info.value.detail.lower() or "size" in exc_info.value.detail.lower()
+
+
+class TestExamServiceStoragePath:
+    """Unit tests for storage path generation - Phase 5 User Story 3."""
+    
+    def test_generate_exam_file_path_basic(self):
+        """Test path generation with basic exam name."""
+        # Arrange
+        service = ExamService(Mock(), Mock())
+        user_id = uuid.UUID('550e8400-e29b-41d4-a716-446655440000')
+        exam_name = "Mathematics Final 2026"
+        
+        # Act
+        path = service.generate_exam_file_path(user_id, exam_name)
+        
+        # Assert
+        assert path == "exams/550e8400-e29b-41d4-a716-446655440000/mathematics-final-2026/original.docx"
+    
+    def test_generate_exam_file_path_vietnamese_characters(self):
+        """Test path generation with Vietnamese characters (accents removed)."""
+        # Arrange
+        service = ExamService(Mock(), Mock())
+        user_id = uuid.UUID('111e1111-e11b-11d1-a111-111111111111')
+        exam_name = "Kiểm tra giữa kì - Toán học"
+        
+        # Act
+        path = service.generate_exam_file_path(user_id, exam_name)
+        
+        # Assert - Vietnamese characters normalized to ASCII
+        assert path == "exams/111e1111-e11b-11d1-a111-111111111111/kiem-tra-giua-ki-toan-hoc/original.docx"
+        assert "giữa" not in path  # Accents removed
+        assert "học" not in path
+    
+    def test_generate_exam_file_path_special_characters(self):
+        """Test path generation with special characters (removed/replaced)."""
+        # Arrange
+        service = ExamService(Mock(), Mock())
+        user_id = uuid.UUID('222e2222-e22b-22d2-a222-222222222222')
+        exam_name = "AP® Physics - C (Mechanics & Electricity)"
+        
+        # Act
+        path = service.generate_exam_file_path(user_id, exam_name)
+        
+        # Assert - Special chars removed, spaces to hyphens
+        assert "®" not in path
+        assert "(" not in path
+        assert ")" not in path
+        assert "&" not in path
+        assert "ap-physics-c-mechanics-electricity" in path
+    
+    def test_generate_exam_file_path_multiple_spaces(self):
+        """Test path generation collapses multiple spaces to single hyphen."""
+        # Arrange
+        service = ExamService(Mock(), Mock())
+        user_id = uuid.UUID('333e3333-e33b-33d3-a333-333333333333')
+        exam_name = "Grade   10    Exam     2026"  # Multiple spaces
+        
+        # Act
+        path = service.generate_exam_file_path(user_id, exam_name)
+        
+        # Assert - Multiple spaces collapsed
+        assert path == "exams/333e3333-e33b-33d3-a333-333333333333/grade-10-exam-2026/original.docx"
+        assert "---" not in path  # No multiple hyphens
+    
+    def test_generate_exam_file_path_includes_user_id(self):
+        """Test path includes user_id for multi-tenancy."""
+        # Arrange
+        service = ExamService(Mock(), Mock())
+        user_id_1 = uuid.UUID('aaa00000-0000-0000-0000-000000000001')
+        user_id_2 = uuid.UUID('bbb00000-0000-0000-0000-000000000002')
+        exam_name = "Same Exam Name"
+        
+        # Act
+        path_1 = service.generate_exam_file_path(user_id_1, exam_name)
+        path_2 = service.generate_exam_file_path(user_id_2, exam_name)
+        
+        # Assert - Different user_ids produce different paths
+        assert "aaa00000-0000-0000-0000-000000000001" in path_1
+        assert "bbb00000-0000-0000-0000-000000000002" in path_2
+        assert path_1 != path_2  # No collision
+    
+    def test_generate_exam_file_path_empty_name_fallback(self):
+        """Test path generation with empty name uses fallback."""
+        # Arrange
+        service = ExamService(Mock(), Mock())
+        user_id = uuid.UUID('444e4444-e44b-44d4-a444-444444444444')
+        exam_name = ""  # Empty
+        
+        # Act
+        path = service.generate_exam_file_path(user_id, exam_name)
+        
+        # Assert - Uses 'untitled' fallback
+        assert "untitled" in path
+        assert path == "exams/444e4444-e44b-44d4-a444-444444444444/untitled/original.docx"
+    
+    def test_generate_exam_file_path_long_name_truncated(self):
+        """Test very long exam names are truncated."""
+        # Arrange
+        service = ExamService(Mock(), Mock())
+        user_id = uuid.UUID('555e5555-e55b-55d5-a555-555555555555')
+        exam_name = "A" * 150  # Very long name
+        
+        # Act
+        path = service.generate_exam_file_path(user_id, exam_name)
+        
+        # Assert - Path length is reasonable
+        parts = path.split('/')
+        exam_slug = parts[2]  # Get the kebab-case part
+        assert len(exam_slug) <= 100  # Should be truncated

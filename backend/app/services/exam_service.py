@@ -79,9 +79,9 @@ class ExamService:
         exam_id = uuid.uuid4()
         task_id = uuid.uuid4()
         
-        # Generate storage path: exams/user-{user_id}/{exam-name}/original.docx
-        # Simplified for MVP - will be enhanced in User Story 3
-        storage_path = f"exams/user-{user_id}/{exam_id}/original.docx"
+        # Generate storage path using artifact_paths utility (Phase 5)
+        # Pattern: exams/{user_id}/{exam-name-kebab}/original.docx
+        storage_path = self.generate_exam_file_path(user_id, exam_data.name)
         
         # Step 1: Upload file to storage (may raise HTTPException 503)
         try:
@@ -199,19 +199,59 @@ class ExamService:
         
         Checks:
         - File is present
-        - MIME type matches DOCX
+        - MIME type matches DOCX or octet-stream
         - File extension is .docx
         - File size ≤ 50MB
+        - File is not empty
         
         Args:
             file: Uploaded file
         
         Raises:
-            HTTPException: If validation fails
-        
-        Note: Full implementation in Phase 4 (User Story 2)
+            HTTPException 400: If validation fails with specific error message
         """
-        raise NotImplementedError("File validation implementation pending - Phase 4")
+        MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB in bytes
+        
+        # Check if file has filename
+        if not file.filename:
+            raise HTTPException(
+                status_code=400,
+                detail="File must have a filename"
+            )
+        
+        # Check file extension
+        if not file.filename.lower().endswith('.docx'):
+            raise HTTPException(
+                status_code=400,
+                detail="File must have .docx extension"
+            )
+        
+        # Check MIME type
+        # Accept both proper DOCX MIME type and octet-stream (some browsers send this)
+        allowed_mime_types = [
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/octet-stream",  # Some browsers send this for .docx
+        ]
+        
+        if file.content_type not in allowed_mime_types:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid file format. Only DOCX files are accepted"
+            )
+        
+        # Check file size
+        if file.size is not None:
+            if file.size == 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail="File cannot be empty"
+                )
+            
+            if file.size > MAX_FILE_SIZE:
+                raise HTTPException(
+                    status_code=400,
+                    detail="File size exceeds maximum allowed limit of 50 MB"
+                )
     
     def generate_exam_file_path(self, user_id: uuid.UUID, exam_name: str) -> str:
         """
@@ -225,7 +265,6 @@ class ExamService:
         
         Returns:
             Storage path string
-        
-        Note: Full implementation in Phase 5 (User Story 3)
         """
-        raise NotImplementedError("Path generation implementation pending - Phase 5")
+        from app.core.artifact_paths import generate_artifact_path
+        return generate_artifact_path(user_id, exam_name, "original.docx")

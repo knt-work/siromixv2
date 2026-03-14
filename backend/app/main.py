@@ -115,6 +115,26 @@ app = FastAPI(
 )
 
 
+# Custom exception handler to convert Pydantic validation errors (422) to 400 Bad Request
+# This ensures the API contract is consistent - all validation errors return 400
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from fastapi import status
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc: RequestValidationError):
+    """
+    Convert Pydantic validation errors from 422 to 400 Bad Request.
+    
+    Maintains consistency with API contract specification where all
+    validation errors (Pydantic schema + custom file validation) return 400.
+    """
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={"detail": exc.errors()}
+    )
+
+
 # Configure CORS - Load from environment
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001").split(",")
 CORS_ORIGINS = [origin.strip() for origin in CORS_ORIGINS]  # Remove any whitespace

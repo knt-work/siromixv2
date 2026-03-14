@@ -101,37 +101,19 @@ async def create_exam(
             detail="File upload is required"
         )
     
-    # Validate file format
-    # DOCX MIME types (some browsers send application/octet-stream)
-    allowed_mime_types = [
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "application/octet-stream",
-    ]
-    if file.content_type not in allowed_mime_types:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid file format. Only DOCX files are accepted"
-        )
-    
-    # Validate file extension
-    if not file.filename or not file.filename.lower().endswith('.docx'):
-        raise HTTPException(
-            status_code=400,
-            detail="File must have .docx extension"
-        )
-    
-    # Validate file size (50MB limit)
-    MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB in bytes
+    # Read file to determine size (needed for validation)
     file_content = await file.read()
-    file_size = len(file_content)
+    file.size = len(file_content)  # Set size attribute for validation
     
-    if file_size > MAX_FILE_SIZE:
-        raise HTTPException(
-            status_code=400,
-            detail="File size exceeds maximum allowed limit of 50 MB"
-        )
+    # Reset file pointer for validation and service consumption
+    await file.seek(0)
     
-    # Reset file pointer for service consumption
+    # Validate file using centralized validation logic (Phase 4)
+    # Create temporary service instance for validation
+    temp_service = ExamService(db=db, storage_client=storage_client)
+    temp_service.validate_docx_file(file)
+    
+    # Reset file pointer again after validation
     await file.seek(0)
     
     # Create ExamCreate Pydantic model from form fields

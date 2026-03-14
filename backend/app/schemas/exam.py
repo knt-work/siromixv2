@@ -79,6 +79,60 @@ class ExamCreate(BaseModel):
         """Remove leading/trailing whitespace from optional fields."""
         return v.strip() if v else None
     
+    @field_validator('name')
+    @classmethod
+    def validate_name_length(cls, v: str) -> str:
+        """Validate name field length with custom error message."""
+        if len(v) > 500:
+            raise ValueError("String should have at most 500 characters")
+        if len(v) == 0:
+            raise ValueError("Field required")
+        return v
+    
+    @field_validator('subject')
+    @classmethod
+    def validate_subject_length(cls, v: str) -> str:
+        """Validate subject field length with custom error message."""
+        if len(v) > 500:
+            raise ValueError("String should have at most 500 characters")
+        if len(v) == 0:
+            raise ValueError("Field required")
+        return v
+    
+    @field_validator('academic_year')
+    @classmethod
+    def validate_academic_year_length(cls, v: str) -> str:
+        """Validate academic_year field length with custom error message."""
+        if len(v) > 50:
+            raise ValueError("String should have at most 50 characters")
+        if len(v) == 0:
+            raise ValueError("Field required")
+        return v
+    
+    @field_validator('grade_level')
+    @classmethod
+    def validate_grade_level_length(cls, v: Optional[str]) -> Optional[str]:
+        """Validate grade_level field length with custom error message."""
+        if v and len(v) > 100:
+            raise ValueError("String should have at most 100 characters")
+        return v
+    
+    @field_validator('num_variants')
+    @classmethod
+    def validate_num_variants_positive(cls, v: int) -> int:
+        """Validate num_variants is positive with custom error message."""
+        if v <= 0:
+            raise ValueError("Input should be greater than 0")
+        return v
+    
+    @field_validator('duration_minutes')
+    @classmethod
+    def validate_duration_positive(cls, v: int) -> int:
+        """Validate duration_minutes is positive with custom error message."""
+        if v <= 0:
+            raise ValueError("Input should be greater than 0")
+        return v
+    
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [

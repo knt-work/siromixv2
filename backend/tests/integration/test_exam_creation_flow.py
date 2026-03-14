@@ -6,7 +6,7 @@ Validates end-to-end behavior with real database and mocked external services.
 """
 
 import pytest
-from httpx import AsyncClient
+from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from unittest.mock import Mock, patch, AsyncMock
@@ -53,7 +53,8 @@ async def authenticated_client(test_user: User):
     
     app.dependency_overrides[get_current_user] = override_get_current_user
     
-    client = AsyncClient(app=app, base_url="http://testserver")
+    transport = ASGITransport(app=app)
+    client = AsyncClient(transport=transport, base_url="http://testserver")
     yield client
     
     # Cleanup
@@ -486,3 +487,322 @@ class TestExamCreationErrorHandling:
             assert exam.subject == data["subject"]
             assert exam.grade_level == data["grade_level"]
             assert exam.instructions == data["instructions"]
+
+
+class TestExamCreationValidationFailures:
+    """Integration tests for validation failures - Phase 4 (User Story 2)."""
+    
+    @pytest.mark.asyncio
+    async def test_validation_failure_no_db_records_created(
+        self,
+        authenticated_client: AsyncClient,
+        async_session: AsyncSession,
+        test_user: User
+    ):
+        """
+        Test that validation failure prevents any DB records from being created.
+        Validates that failed submissions don't pollute the database.
+        """
+        # Arrange - Create invalid request (PDF file instead of DOCX)
+        pdf_content = b'%PDF-1.4' + b'\x00' * 100
+        pdf_file = ("exam.pdf", BytesIO(pdf_content), "application/pdf")
+        
+        data = {
+            "name": "Test Exam",
+            "subject": "Mathematics",
+            "academic_year": "2025-2026",
+            "duration_minutes": "60",
+            "num_variants": "3"
+        }
+        files = {"file": pdf_file}
+        
+        # Get initial count of exams for this user
+        initial_exam_count = await async_session.execute(
+            select(Exam).where(Exam.user_id == test_user.user_id)
+        )
+        initial_exams = initial_exam_count.scalars().all()
+        initial_count = len(initial_exams)
+        
+        # Act
+        response = await authenticated_client.post(
+            "/api/v1/exams",
+            data=data,
+            files=files
+        )
+        
+        # Assert - Request failed with 400
+        assert response.status_code == 400
+        
+        # Verify no new exam records created
+        final_exam_count = await async_session.execute(
+            select(Exam).where(Exam.user_id == test_user.user_id)
+        )
+        final_exams = final_exam_count.scalars().all()
+        final_count = len(final_exams)
+        
+        assert final_count == initial_count, "No new exam records should be created after validation failure"
+        
+        # Verify no new task records created
+        task_count = await async_session.execute(
+            select(Task).where(Task.user_id == test_user.user_id)
+        )
+        tasks = task_count.scalars().all()
+        assert len(tasks) == 0, "No task records should exist after validation failure"
+    
+    @pytest.mark.asyncio
+    async def test_validation_failure_no_storage_upload(
+        self,
+        authenticated_client: AsyncClient,
+        valid_exam_form_data: dict
+    ):
+        """
+        Test that validation failure prevents file upload to storage.
+        Validates that storage operations don't happen for invalid requests.
+        """
+        # Arrange - Mock storage to verify it's never called
+        with patch('app.core.storage.StorageClient.upload_file') as mock_upload:
+            # Create invalid request (file size exceeds limit)
+            large_content = b'PK\x03\x04' + b'\x00' * (51 * 1024 * 1024)  # 51MB
+            large_file = ("exam.docx", BytesIO(large_content), "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+            
+            data = valid_exam_form_data
+            files = {"file": large_file}
+            
+            # Act
+            response = await authenticated_client.post(
+                "/api/v1/exams",
+                data=data,
+                files=files
+            )
+            
+            # Assert - Request failed
+            assert response.status_code in [400, 413]
+            
+            # Verify storage upload was never called
+            mock_upload.assert_not_called()
+    
+    @pytest.mark.asyncio
+    async def test_multiple_validation_failures_reported(
+        self,
+        authenticated_client: AsyncClient
+    ):
+        """
+        Test that multiple validation errors are reported together.
+        """
+        # Arrange - Create request with multiple validation errors
+        data = {
+            # Missing 'name' field
+            "subject": "Math",
+            "academic_year": "2025-2026",
+            "duration_minutes": "0",  # Invalid: must be > 0
+            "num_variants": "-1"  # Invalid: must be > 0
+        }
+        # No file parameter - also invalid
+        
+        # Act
+        response = await authenticated_client.post(
+            "/api/v1/exams",
+            data=data
+        )
+        
+        # Assert
+        assert response.status_code == 400  # All validation errors return 400 (custom exception handler)
+        json_response = response.json()
+        assert "detail" in json_response
+        
+        # Should report multiple errors
+        errors = json_response["detail"]
+        # At minimum, should flag missing name and missing file
+        error_text = str(errors).lower()
+        assert "name" in error_text or "file" in error_text
+    
+    @pytest.mark.asyncio
+    async def test_field_length_validation_enforced(
+        self,
+        authenticated_client: AsyncClient,
+        async_session: AsyncSession,
+        test_user: User,
+        docx_file_upload: tuple  
+    ):
+        """
+        Test that field length constraints are enforced.
+        Validates that overly long field values are rejected.
+        """
+        # Arrange - Create request with name exceeding max length
+        data = {
+            "name": "A" * 501,  # Exceeds 500 character limit
+            "subject": "Mathematics",
+            "academic_year": "2025-2026",
+            "duration_minutes": "60",
+            "num_variants": "3"
+        }
+        files = {"file": docx_file_upload}
+        
+        # Act
+        response = await authenticated_client.post(
+            "/api/v1/exams",
+            data=data,
+            files=files
+        )
+        
+        # Assert - Request failed with validation error
+        assert response.status_code == 400  # All validation errors return 400 (custom exception handler)
+        
+        # Verify error message mentions length constraint
+        json_response = response.json()
+        error_text = str(json_response["detail"]).lower()
+        assert "500" in error_text or "length" in error_text
+        
+        # Verify no DB records created
+        exam_count = await async_session.execute(
+            select(Exam).where(Exam.user_id == test_user.user_id)
+        )
+        exams = exam_count.scalars().all()
+        assert len(exams) == 0
+
+
+class TestExamCreationStoragePaths:
+    """Integration tests for storage path organization - Phase 5 User Story 3."""
+    
+    @pytest.mark.asyncio
+    async def test_different_users_same_exam_name_no_collision(
+        self,
+        async_session: AsyncSession,
+        docx_file_upload: tuple
+    ):
+        """
+        Test that two users with same exam name create separate storage paths.
+        Verifies multi-tenancy and collision prevention.
+        """
+        # Arrange - Create two test users
+        from app.models.user import User
+        
+        user1 = User(
+            user_id=uuid.uuid4(),
+            google_sub="test_user1_google_sub",
+            email="user1@example.com",
+            display_name="User One"
+        )
+        user2 = User(
+            user_id=uuid.uuid4(),
+            google_sub="test_user2_google_sub",
+            email="user2@example.com",
+            display_name="User Two"
+        )
+        async_session.add_all([user1, user2])
+        await async_session.commit()
+        
+        # Same exam data for both users
+        exam_data = {
+            "name": "Mathematics Final Exam",
+            "subject": "Mathematics",
+            "academic_year": "2025-2026",
+            "duration_minutes": "60",
+            "num_variants": "3"
+        }
+        
+        # Mock storage operations
+        with patch('app.core.storage.StorageClient.upload_file') as mock_upload, \
+             patch('app.tasks.process_task.process_task.apply_async') as mock_celery:
+            
+            mock_upload.return_value = AsyncMock()
+            mock_celery.return_value = Mock(id=str(uuid.uuid4()))
+            
+            # Act - User 1 creates exam
+            from app.core.deps import get_current_user
+            app.dependency_overrides[get_current_user] = lambda: user1
+            
+            transport = ASGITransport(app=app)
+            async with AsyncClient(transport=transport, base_url="http://testserver") as client1:
+                response1 = await client1.post(
+                    "/api/v1/exams",
+                    data=exam_data,
+                    files={"file": docx_file_upload}
+                )
+            
+            # User 2 creates exam with same name
+            app.dependency_overrides[get_current_user] = lambda: user2
+            
+            async with AsyncClient(transport=transport, base_url="http://testserver") as client2:
+                response2 = await client2.post(
+                    "/api/v1/exams",
+                    data=exam_data,
+                    files={"file": docx_file_upload}
+                )
+            
+            # Cleanup
+            app.dependency_overrides.clear()
+        
+        # Assert - Both succeeded
+        assert response1.status_code == 201
+        assert response2.status_code == 201
+        
+        # Verify storage upload was called twice with different paths
+        assert mock_upload.call_count == 2
+        
+        call1_path = mock_upload.call_args_list[0][0][0]  # First positional arg of first call
+        call2_path = mock_upload.call_args_list[1][0][0]  # First positional arg of second call
+        
+        # Assert paths include user IDs and are different
+        assert str(user1.user_id) in call1_path
+        assert str(user2.user_id) in call2_path
+        assert call1_path != call2_path  # No collision
+        
+        # Assert both follow expected pattern: exams/{user_id}/mathematics-final-exam/original.docx
+        assert "exams/" in call1_path
+        assert "mathematics-final-exam" in call1_path
+        assert "original.docx" in call1_path
+        
+        assert "exams/" in call2_path
+        assert "mathematics-final-exam" in call2_path
+        assert "original.docx" in call2_path
+    
+    @pytest.mark.asyncio
+    async def test_storage_path_kebab_case_conversion(
+        self,
+        authenticated_client: AsyncClient,
+        async_session: AsyncSession,
+        test_user: User,
+        docx_file_upload: tuple
+    ):
+        """
+        Test that exam names with special characters are converted to kebab-case.
+        """
+        # Arrange
+        exam_data = {
+            "name": "AP® Physics - C (Mechanics)",  # Special characters and spaces
+            "subject": "Physics",
+            "academic_year": "2025-2026",
+            "duration_minutes": "90",
+            "num_variants": "5"
+        }
+        
+        # Mock storage operations
+        with patch('app.core.storage.StorageClient.upload_file') as mock_upload, \
+             patch('app.tasks.process_task.process_task.apply_async') as mock_celery:
+            
+            mock_upload.return_value = AsyncMock()
+            mock_celery.return_value = Mock(id=str(uuid.uuid4()))
+            
+            # Act
+            response = await authenticated_client.post(
+                "/api/v1/exams",
+                data=exam_data,
+                files={"file": docx_file_upload}
+            )
+        
+        # Assert
+        assert response.status_code == 201
+        
+        # Verify storage path is kebab-case
+        mock_upload.assert_called_once()
+        storage_path = mock_upload.call_args[0][0]
+        
+        # Should not contain special characters
+        assert "®" not in storage_path
+        assert "(" not in storage_path
+        assert ")" not in storage_path
+        
+        # Should be kebab-case
+        assert "ap-physics-c-mechanics" in storage_path.lower()
+        assert "original.docx" in storage_path

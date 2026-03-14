@@ -93,15 +93,15 @@
 
 ### Tests for User Story 2 (MANDATORY - Write FIRST, ensure they FAIL) ✅
 
-- [ ] T028 [P] [US2] Unit tests for file validation in backend/tests/unit/services/test_exam_service.py (test validate_docx_file with PDF, TXT, corrupted files - expect ValidationError)
-- [ ] T029 [P] [US2] Contract tests for validation errors in backend/tests/contract/test_exams_api.py (test 400 responses for: missing name, name > 500 chars, num_variants = 0, duration_minutes = -5, file > 50MB, non-DOCX file)
-- [ ] T030 [P] [US2] Integration tests for validation failures in backend/tests/integration/test_exam_upload.py (test no DB records or files created after validation failure)
+- [X] T028 [P] [US2] Unit tests for file validation in backend/tests/unit/services/test_exam_service.py (test validate_docx_file with PDF, TXT, corrupted files - expect ValidationError)
+- [X] T029 [P] [US2] Contract tests for validation errors in backend/tests/contract/test_exams_api.py (test 400 responses for: missing name, name > 500 chars, num_variants = 0, duration_minutes = -5, file > 50MB, non-DOCX file)
+- [X] T030 [P] [US2] Integration tests for validation failures in backend/tests/integration/test_exam_upload.py (test no DB records or files created after validation failure)
 
 ### Implementation for User Story 2
 
-- [ ] T031 [P] [US2] Implement file validation function in backend/app/services/exam_service.py: validate_docx_file (check file size ≤ 50MB, check MIME type = application/vnd.openxmlformats-officedocument.wordprocessingml.document, check extension .docx, raise HTTPException 400 with specific error message)
-- [ ] T032 [US2] Add file validation call in POST /api/v1/exams endpoint in backend/app/api/v1/endpoints/exams.py before ExamService.create_exam_with_upload (validate file parameter not None, call validate_docx_file)
-- [ ] T033 [US2] Add Pydantic field validators to ExamCreate schema in backend/app/schemas/exam.py (add custom error messages for each field constraint per contracts/exams_post.md)
+- [X] T031 [P] [US2] Implement file validation function in backend/app/services/exam_service.py: validate_docx_file (check file size ≤ 50MB, check MIME type = application/vnd.openxmlformats-officedocument.wordprocessingml.document, check extension .docx, raise HTTPException 400 with specific error message)
+- [X] T032 [US2] Add file validation call in POST /api/v1/exams endpoint in backend/app/api/v1/endpoints/exams.py before ExamService.create_exam_with_upload (validate file parameter not None, call validate_docx_file)
+- [X] T033 [US2] Add Pydantic field validators to ExamCreate schema in backend/app/schemas/exam.py (add custom error messages for each field constraint per contracts/exams_post.md)
 
 **Checkpoint**: Validation prevents all invalid submissions - data integrity ensured
 
@@ -115,13 +115,13 @@
 
 ### Tests for User Story 3 (MANDATORY - Write FIRST, ensure they FAIL) ✅
 
-- [ ] T034 [P] [US3] Unit tests for storage path generation in backend/tests/unit/services/test_exam_service.py (test generate_exam_file_path with Vietnamese characters, special characters, spaces - verify kebab-case output and user_id inclusion)
-- [ ] T035 [P] [US3] Integration tests for path structure in backend/tests/integration/test_exam_upload.py (test two users with same exam name create separate paths, verify no collisions)
+- [X] T034 [P] [US3] Unit tests for storage path generation in backend/tests/unit/services/test_exam_service.py (test generate_exam_file_path with Vietnamese characters, special characters, spaces - verify kebab-case output and user_id inclusion)
+- [X] T035 [P] [US3] Integration tests for path structure in backend/tests/integration/test_exam_upload.py (test two users with same exam name create separate paths, verify no collisions)
 
 ### Implementation for User Story 3
 
-- [ ] T036 [US3] Implement generate_exam_file_path function in backend/app/services/exam_service.py using artifact_paths.generate_storage_path utility (input: user_id, exam_name; output: exams/{user_id}/{exam-name-kebab}/original.docx)
-- [ ] T037 [US3] Integrate generate_exam_file_path in ExamService.create_exam_with_upload in backend/app/services/exam_service.py (use generated path for storage upload, store path in Artifact record)
+- [X] T036 [US3] Implement generate_exam_file_path function in backend/app/services/exam_service.py using artifact_paths.generate_storage_path utility (input: user_id, exam_name; output: exams/{user_id}/{exam-name-kebab}/original.docx)
+- [X] T037 [US3] Integrate generate_exam_file_path in ExamService.create_exam_with_upload in backend/app/services/exam_service.py (use generated path for storage upload, store path in Artifact record)
 - [ ] T038 [US3] Add file path to API response for future retrieval (optional) in backend/app/api/v1/endpoints/exams.py
 
 **Checkpoint**: Files organized systematically - multi-tenancy and collision prevention working

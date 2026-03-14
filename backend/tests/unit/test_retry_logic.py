@@ -9,7 +9,7 @@ from fastapi import HTTPException
 
 from app.models.task import Task, TaskStatus, TaskStage
 from app.services.task_service import retry_task, get_task_by_id
-from tests.utils import create_test_user
+from tests.utils import create_test_user, create_test_exam
 
 
 @pytest.mark.asyncio
@@ -20,9 +20,11 @@ async def test_retry_increments_retry_count(async_session):
         google_sub="retry_count_user",
         email="retry_count@example.com"
     )
+    exam = await create_test_exam(async_session, user)
     
     task = Task(
         user_id=user.user_id,
+        exam_id=exam.exam_id,
         status=TaskStatus.FAILED,
         current_stage=TaskStage.AI_UNDERSTANDING,
         progress=40,
@@ -56,9 +58,11 @@ async def test_retry_changes_status_to_running(async_session):
         google_sub="status_change_user",
         email="status_change@example.com"
     )
+    exam = await create_test_exam(async_session, user)
     
     task = Task(
         user_id=user.user_id,
+        exam_id=exam.exam_id,
         status=TaskStatus.FAILED,
         current_stage=TaskStage.SHUFFLE,
         progress=80,
@@ -93,9 +97,11 @@ async def test_retry_clears_error_message(async_session):
         google_sub="error_clear_user",
         email="error_clear@example.com"
     )
+    exam = await create_test_exam(async_session, user)
     
     task = Task(
         user_id=user.user_id,
+        exam_id=exam.exam_id,
         status=TaskStatus.FAILED,
         current_stage=TaskStage.AI_ANALYSIS,
         progress=60,
@@ -129,9 +135,11 @@ async def test_retry_multiple_times_accumulates_count(async_session):
         google_sub="multi_retry_user",
         email="multi_retry@example.com"
     )
+    exam = await create_test_exam(async_session, user)
     
     task = Task(
         user_id=user.user_id,
+        exam_id=exam.exam_id,
         status=TaskStatus.FAILED,
         current_stage=TaskStage.RENDER_DOCX,
         progress=95,
@@ -183,6 +191,7 @@ async def test_retry_not_found_raises_404(async_session):
         google_sub="notfound_user",
         email="notfound@example.com"
     )
+    exam = await create_test_exam(async_session, user)
     
     fake_task_id = uuid.uuid4()
     
@@ -204,6 +213,7 @@ async def test_retry_other_user_raises_403(async_session):
         google_sub="owner_user",
         email="owner@example.com"
     )
+    owner_exam = await create_test_exam(async_session, owner)
     
     other = await create_test_user(
         async_session,
@@ -213,6 +223,7 @@ async def test_retry_other_user_raises_403(async_session):
     
     task = Task(
         user_id=owner.user_id,
+        exam_id=owner_exam.exam_id,
         status=TaskStatus.FAILED,
         current_stage=TaskStage.AI_UNDERSTANDING,
         error="Failed",
@@ -240,9 +251,11 @@ async def test_retry_completed_task_raises_400(async_session):
         google_sub="completed_user",
         email="completed@example.com"
     )
+    exam = await create_test_exam(async_session, user)
     
     task = Task(
         user_id=user.user_id,
+        exam_id=exam.exam_id,
         status=TaskStatus.COMPLETED,
         current_stage=TaskStage.RENDER_DOCX,
         progress=100,
@@ -277,9 +290,11 @@ async def test_retry_running_task_raises_400(async_session):
         google_sub="running_user",
         email="running@example.com"
     )
+    exam = await create_test_exam(async_session, user)
     
     task = Task(
         user_id=user.user_id,
+        exam_id=exam.exam_id,
         status=TaskStatus.RUNNING,
         current_stage=TaskStage.SHUFFLE,
         progress=75,
@@ -313,9 +328,11 @@ async def test_retry_queued_task_raises_400(async_session):
         google_sub="queued_user",
         email="queued@example.com"
     )
+    exam = await create_test_exam(async_session, user)
     
     task = Task(
         user_id=user.user_id,
+        exam_id=exam.exam_id,
         status=TaskStatus.QUEUED,
         retry_count_by_stage={}
     )

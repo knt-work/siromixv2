@@ -52,7 +52,7 @@ class Exam(Base):
     academic_year: Mapped[str] = mapped_column(String(50), nullable=False)
     grade_level: Mapped[str | None] = mapped_column(String(100), nullable=True)
     num_variants: Mapped[int] = mapped_column(Integer, nullable=False)
-    duration_minutes: Mapped[int] = mapped_column(Integer, nullable=False)
+    duration_minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=60)
     instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[ExamStatus] = mapped_column(Enum(ExamStatus, native_enum=False), nullable=False, default=ExamStatus.DRAFT, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now(), index=True)

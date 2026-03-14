@@ -15,6 +15,7 @@ from app.models.task import Task, TaskStatus, TaskStage
 async def create_task(
     db: AsyncSession,
     user_id: uuid.UUID,
+    exam_id: uuid.UUID,
     simulate_failure_stage: Optional[TaskStage] = None,
 ) -> Task:
     """
@@ -23,6 +24,7 @@ async def create_task(
     Args:
         db: Database session
         user_id: UUID of the user creating the task
+        exam_id: UUID of the exam this task belongs to
         simulate_failure_stage: Stage at which to simulate failure (for testing)
         
     Returns:
@@ -36,6 +38,7 @@ async def create_task(
     # Create new task
     task = Task(
         user_id=user_id,
+        exam_id=exam_id,
         status=TaskStatus.QUEUED,
         current_stage=None,
         progress=0,
@@ -273,8 +276,8 @@ async def retry_task(
         from sqlalchemy.orm import attributes
         attributes.flag_modified(task, "retry_count_by_stage")
     
-    # Reset task to queued state (will be set to running when Celery worker picks it up)
-    task.status = TaskStatus.QUEUED
+    # Reset task to running state for Celery worker to resume processing
+    task.status = TaskStatus.RUNNING
     task.error = None
     
     await db.commit()

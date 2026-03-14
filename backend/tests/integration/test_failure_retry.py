@@ -11,6 +11,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from unittest.mock import patch, AsyncMock
 
 from app.models.user import User
+from app.models.exam import Exam, ExamStatus
 from app.models.task import Task
 from app.models.task_log import TaskLog, LogLevel
 from app.schemas.task import TaskCreate
@@ -37,12 +38,17 @@ async def test_failure_and_retry_flow(async_session):
     async_session.add(test_user)
     await async_session.commit()
     await async_session.refresh(test_user)
+    exam = Exam(user_id=test_user.user_id, name="Test Exam", subject="Test", academic_year="2025-2026", num_variants=1, duration_minutes=60)
+    async_session.add(exam)
+    await async_session.commit()
+    await async_session.refresh(exam)
     
     # 2. Create task (will track simulated failure in retry_count_by_stage)
     from app.models.task import TaskStage, TaskStatus
     
     task = Task(
         user_id=test_user.user_id,
+        exam_id=exam.exam_id,
         status=TaskStatus.QUEUED,
         current_stage=None,
         progress=0,
@@ -180,12 +186,17 @@ async def test_retry_increments_counter_for_correct_stage(async_session):
     async_session.add(test_user)
     await async_session.commit()
     await async_session.refresh(test_user)
+    exam = Exam(user_id=test_user.user_id, name="Test Exam", subject="Test", academic_year="2025-2026", num_variants=1, duration_minutes=60)
+    async_session.add(exam)
+    await async_session.commit()
+    await async_session.refresh(exam)
     
     # Create task
     from app.models.task import TaskStage, TaskStatus
     
     task = Task(
         user_id=test_user.user_id,
+        exam_id=exam.exam_id,
         status=TaskStatus.FAILED,
         current_stage=TaskStage.AI_ANALYSIS,
         progress=60,
@@ -232,12 +243,17 @@ async def test_multiple_retries_for_same_stage(async_session):
     async_session.add(test_user)
     await async_session.commit()
     await async_session.refresh(test_user)
+    exam = Exam(user_id=test_user.user_id, name="Test Exam", subject="Test", academic_year="2025-2026", num_variants=1, duration_minutes=60)
+    async_session.add(exam)
+    await async_session.commit()
+    await async_session.refresh(exam)
     
     # Create task that will fail extract_docx 3 times
     from app.models.task import TaskStage, TaskStatus
     
     task = Task(
         user_id=test_user.user_id,
+        exam_id=exam.exam_id,
         status=TaskStatus.QUEUED,
         current_stage=None,
         progress=0,

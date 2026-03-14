@@ -41,18 +41,17 @@ def valid_docx_file():
 @pytest.fixture
 def authenticated_client(test_user: User):
     """Create authenticated HTTP client with mocked JWT."""
-    # Mock JWT token for test user
-    mock_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.token"
-    
     async def override_get_current_user():
         return test_user
-    
-    # Override dependency to return test user
+
     from app.core.deps import get_current_user
     app.dependency_overrides[get_current_user] = override_get_current_user
-    
+
     transport = ASGITransport(app=app)
-    return AsyncClient(transport=transport, base_url="http://testserver")
+    client = AsyncClient(transport=transport, base_url="http://testserver")
+    yield client
+
+    app.dependency_overrides.clear()
 
 
 class TestPostExamsSuccess:
@@ -77,11 +76,7 @@ class TestPostExamsSuccess:
             # Mock successful creation
             exam_id = uuid.uuid4()
             task_id = uuid.uuid4()
-            mock_create.return_value = {
-                "exam_id": exam_id,
-                "task_id": task_id,
-                "status": "queued"
-            }
+            mock_create.return_value = (exam_id, task_id, "queued")
             
             # Prepare multipart/form-data
             files = {"file": valid_docx_file}
@@ -373,7 +368,7 @@ class TestPostExamsAuthenticationErrors:
         assert response.status_code == 401
         json_response = response.json()
         assert "detail" in json_response
-        assert "authenticated" in str(json_response["detail"]).lower()
+        assert "authorization" in str(json_response["detail"]).lower()
     
     @pytest.mark.asyncio
     async def test_invalid_authentication_token(
@@ -465,6 +460,37 @@ class TestPostExamsStorageErrors:
             assert response.status_code == 507
             json_response = response.json()
             assert "storage" in str(json_response["detail"]).lower() or "capacity" in str(json_response["detail"]).lower()
+    
+    @pytest.mark.asyncio
+    async def test_request_timeout(
+        self,
+        authenticated_client: AsyncClient,
+        valid_exam_data: dict,
+        valid_docx_file: tuple
+    ):
+        """Test request timeout (504 Gateway Timeout)."""
+        # Arrange
+        with patch('app.services.exam_service.ExamService.create_exam_with_upload') as mock_create:
+            from fastapi import HTTPException
+            mock_create.side_effect = HTTPException(
+                status_code=504,
+                detail="Request timeout. The operation took too long to complete."
+            )
+            
+            data = valid_exam_data
+            files = {"file": valid_docx_file}
+            
+            # Act
+            response = await authenticated_client.post(
+                "/api/v1/exams",
+                data=data,
+                files=files
+            )
+            
+            # Assert
+            assert response.status_code == 504
+            json_response = response.json()
+            assert "timeout" in str(json_response["detail"]).lower()
 
 
 class TestPostExamsDatabaseErrors:

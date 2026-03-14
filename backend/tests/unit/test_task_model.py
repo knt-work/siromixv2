@@ -11,13 +11,15 @@ from sqlalchemy.exc import IntegrityError
 
 from app.models.task import Task, TaskStatus, TaskStage
 from app.models.user import User
+from app.models.exam import Exam
 
 
 @pytest.mark.asyncio
-async def test_task_creation(async_session, test_user):
+async def test_task_creation(async_session, test_user, test_exam):
     """Test basic task creation with default values."""
     task = Task(
-        user_id=test_user.user_id
+        user_id=test_user.user_id,
+        exam_id=test_exam.exam_id,
     )
     
     async_session.add(task)
@@ -37,9 +39,9 @@ async def test_task_creation(async_session, test_user):
 
 
 @pytest.mark.asyncio
-async def test_task_status_transitions(async_session, test_user):
+async def test_task_status_transitions(async_session, test_user, test_exam):
     """Test valid task status transitions."""
-    task = Task(user_id=test_user.user_id)
+    task = Task(user_id=test_user.user_id, exam_id=test_exam.exam_id)
     async_session.add(task)
     await async_session.commit()
     
@@ -73,10 +75,11 @@ async def test_task_status_transitions(async_session, test_user):
 
 
 @pytest.mark.asyncio
-async def test_task_failure_with_error(async_session, test_user):
+async def test_task_failure_with_error(async_session, test_user, test_exam):
     """Test task failure with error message."""
     task = Task(
         user_id=test_user.user_id,
+        exam_id=test_exam.exam_id,
         status=TaskStatus.RUNNING,
         current_stage=TaskStage.AI_ANALYSIS,
         progress=60
@@ -97,12 +100,12 @@ async def test_task_failure_with_error(async_session, test_user):
 
 
 @pytest.mark.asyncio
-async def test_progress_constraints_valid(async_session, test_user):
+async def test_progress_constraints_valid(async_session, test_user, test_exam):
     """Test that valid progress values (0-100) are accepted."""
     # Test boundary values
-    task_0 = Task(user_id=test_user.user_id, progress=0)
-    task_50 = Task(user_id=test_user.user_id, progress=50)
-    task_100 = Task(user_id=test_user.user_id, progress=100)
+    task_0 = Task(user_id=test_user.user_id, exam_id=test_exam.exam_id, progress=0)
+    task_50 = Task(user_id=test_user.user_id, exam_id=test_exam.exam_id, progress=50)
+    task_100 = Task(user_id=test_user.user_id, exam_id=test_exam.exam_id, progress=100)
     
     async_session.add_all([task_0, task_50, task_100])
     await async_session.commit()
@@ -119,9 +122,9 @@ async def test_progress_constraints_valid(async_session, test_user):
 
 
 @pytest.mark.asyncio
-async def test_progress_constraints_invalid_negative(async_session, test_user):
+async def test_progress_constraints_invalid_negative(async_session, test_user, test_exam):
     """Test that negative progress values are rejected."""
-    task = Task(user_id=test_user.user_id, progress=-1)
+    task = Task(user_id=test_user.user_id, exam_id=test_exam.exam_id, progress=-1)
     async_session.add(task)
     
     with pytest.raises(IntegrityError) as exc_info:
@@ -132,9 +135,9 @@ async def test_progress_constraints_invalid_negative(async_session, test_user):
 
 
 @pytest.mark.asyncio
-async def test_progress_constraints_invalid_exceeds_100(async_session, test_user):
+async def test_progress_constraints_invalid_exceeds_100(async_session, test_user, test_exam):
     """Test that progress values > 100 are rejected."""
-    task = Task(user_id=test_user.user_id, progress=101)
+    task = Task(user_id=test_user.user_id, exam_id=test_exam.exam_id, progress=101)
     async_session.add(task)
     
     with pytest.raises(IntegrityError) as exc_info:
@@ -145,9 +148,9 @@ async def test_progress_constraints_invalid_exceeds_100(async_session, test_user
 
 
 @pytest.mark.asyncio
-async def test_retry_count_by_stage_empty_default(async_session, test_user):
+async def test_retry_count_by_stage_empty_default(async_session, test_user, test_exam):
     """Test that retry_count_by_stage defaults to empty dict."""
-    task = Task(user_id=test_user.user_id)
+    task = Task(user_id=test_user.user_id, exam_id=test_exam.exam_id)
     async_session.add(task)
     await async_session.commit()
     await async_session.refresh(task)
@@ -156,10 +159,11 @@ async def test_retry_count_by_stage_empty_default(async_session, test_user):
 
 
 @pytest.mark.asyncio
-async def test_retry_count_by_stage_jsonb_operations(async_session, test_user):
+async def test_retry_count_by_stage_jsonb_operations(async_session, test_user, test_exam):
     """Test JSONB operations on retry_count_by_stage."""
     task = Task(
         user_id=test_user.user_id,
+        exam_id=test_exam.exam_id,
         retry_count_by_stage={
             "extract_docx": 0,
             "ai_understanding": 1
@@ -193,10 +197,11 @@ async def test_retry_count_by_stage_jsonb_operations(async_session, test_user):
 
 
 @pytest.mark.asyncio
-async def test_retry_count_increments(async_session, test_user):
+async def test_retry_count_increments(async_session, test_user, test_exam):
     """Test incrementing retry count for a specific stage."""
     task = Task(
         user_id=test_user.user_id,
+        exam_id=test_exam.exam_id,
         status=TaskStatus.FAILED,
         current_stage=TaskStage.SHUFFLE,
         retry_count_by_stage={"shuffle": 0}
@@ -223,10 +228,11 @@ async def test_retry_count_increments(async_session, test_user):
 
 
 @pytest.mark.asyncio
-async def test_task_with_all_stages_tracked(async_session, test_user):
+async def test_task_with_all_stages_tracked(async_session, test_user, test_exam):
     """Test task with all pipeline stages in retry_count_by_stage."""
     task = Task(
         user_id=test_user.user_id,
+        exam_id=test_exam.exam_id,
         status=TaskStatus.RUNNING,
         current_stage=TaskStage.RENDER_DOCX,
         progress=80,
@@ -248,9 +254,9 @@ async def test_task_with_all_stages_tracked(async_session, test_user):
 
 
 @pytest.mark.asyncio
-async def test_task_user_relationship(async_session, test_user):
+async def test_task_user_relationship(async_session, test_user, test_exam):
     """Test that task has proper relationship to user."""
-    task = Task(user_id=test_user.user_id)
+    task = Task(user_id=test_user.user_id, exam_id=test_exam.exam_id)
     async_session.add(task)
     await async_session.commit()
     await async_session.refresh(task)
@@ -273,10 +279,25 @@ async def test_task_cascade_delete(async_session):
     async_session.add(temp_user)
     await async_session.commit()
     await async_session.refresh(temp_user)
+
+    # Create a temporary exam for this user
+    from app.models.exam import Exam, ExamStatus
+    temp_exam = Exam(
+        user_id=temp_user.user_id,
+        name="Temp Exam",
+        subject="Test",
+        academic_year="2025-2026",
+        num_variants=1,
+        duration_minutes=30,
+        status=ExamStatus.DRAFT,
+    )
+    async_session.add(temp_exam)
+    await async_session.commit()
+    await async_session.refresh(temp_exam)
     
     # Create tasks for this user
-    task1 = Task(user_id=temp_user.user_id)
-    task2 = Task(user_id=temp_user.user_id)
+    task1 = Task(user_id=temp_user.user_id, exam_id=temp_exam.exam_id)
+    task2 = Task(user_id=temp_user.user_id, exam_id=temp_exam.exam_id)
     async_session.add_all([task1, task2])
     await async_session.commit()
     
@@ -296,9 +317,9 @@ async def test_task_cascade_delete(async_session):
 
 
 @pytest.mark.asyncio
-async def test_task_timestamps_auto_populate(async_session, test_user):
+async def test_task_timestamps_auto_populate(async_session, test_user, test_exam):
     """Test that created_at and updated_at are automatically populated."""
-    task = Task(user_id=test_user.user_id)
+    task = Task(user_id=test_user.user_id, exam_id=test_exam.exam_id)
     async_session.add(task)
     await async_session.commit()
     await async_session.refresh(task)
@@ -309,11 +330,11 @@ async def test_task_timestamps_auto_populate(async_session, test_user):
 
 
 @pytest.mark.asyncio
-async def test_task_updated_at_changes(async_session, test_user):
+async def test_task_updated_at_changes(async_session, test_user, test_exam):
     """Test that updated_at changes when task is modified."""
     import asyncio
     
-    task = Task(user_id=test_user.user_id)
+    task = Task(user_id=test_user.user_id, exam_id=test_exam.exam_id)
     async_session.add(task)
     await async_session.commit()
     await async_session.refresh(task)

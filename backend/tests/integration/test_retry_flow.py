@@ -11,7 +11,7 @@ from app.models.task import Task, TaskStatus, TaskStage
 from app.models.task_log import LogLevel
 from app.services.task_service import create_task, retry_task, get_task_by_id
 from app.services.task_log_service import get_error_logs
-from tests.utils import create_test_user
+from tests.utils import create_test_user, create_test_exam
 
 
 @pytest.mark.asyncio
@@ -32,11 +32,13 @@ async def test_retry_flow_task_fails_then_completes(async_session):
         google_sub="retry_flow_user",
         email="retry_flow@example.com"
     )
+    exam = await create_test_exam(async_session, user)
     
     # 1. Create task (would normally enqueue to Celery, but we'll simulate)
     task = await create_task(
         db=async_session,
         user_id=user.user_id,
+        exam_id=exam.exam_id,
         simulate_failure_stage=TaskStage.AI_UNDERSTANDING
     )
     
@@ -109,11 +111,13 @@ async def test_retry_flow_multiple_failures(async_session):
         google_sub="multi_fail_user",
         email="multi_fail@example.com"
     )
+    exam = await create_test_exam(async_session, user)
     
     # Create task
     task = await create_task(
         db=async_session,
         user_id=user.user_id,
+        exam_id=exam.exam_id,
         simulate_failure_stage=TaskStage.SHUFFLE
     )
     
@@ -172,8 +176,9 @@ async def test_retry_flow_different_stages(async_session):
         google_sub="diff_stages_user",
         email="diff_stages@example.com"
     )
+    exam = await create_test_exam(async_session, user)
     
-    task = await create_task(async_session, user.user_id)
+    task = await create_task(async_session, user.user_id, exam.exam_id)
     
     # Fail at extract_docx
     task.status = TaskStatus.RUNNING

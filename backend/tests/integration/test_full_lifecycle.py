@@ -10,6 +10,7 @@ from sqlalchemy import select
 from unittest.mock import patch, AsyncMock
 
 from app.models.user import User
+from app.models.exam import Exam, ExamStatus
 from app.models.task import Task
 from app.models.task_log import TaskLog, LogLevel
 from app.schemas.task import TaskCreate
@@ -39,9 +40,14 @@ async def test_full_task_lifecycle_creation_to_completion(async_session):
     async_session.add(test_user)
     await async_session.commit()
     await async_session.refresh(test_user)
+    exam = Exam(user_id=test_user.user_id, name="Test Exam", subject="Test", academic_year="2025-2026", num_variants=1, duration_minutes=60)
+    async_session.add(exam)
+    await async_session.commit()
+    await async_session.refresh(exam)
     
     # 2. Create task (simulate API endpoint call)
     task_data = TaskCreate(
+        exam_id=exam.exam_id,
         simulate_failure_stage=None  # No simulated failure
     )
     
@@ -49,6 +55,7 @@ async def test_full_task_lifecycle_creation_to_completion(async_session):
     task_dict = task_data.model_dump()
     task = Task(
         user_id=test_user.user_id,
+        exam_id=exam.exam_id,
         status="queued",
         current_stage=None,
         progress=0,
@@ -144,12 +151,17 @@ async def test_task_status_transitions(async_session):
     async_session.add(test_user)
     await async_session.commit()
     await async_session.refresh(test_user)
+    exam = Exam(user_id=test_user.user_id, name="Test Exam", subject="Test", academic_year="2025-2026", num_variants=1, duration_minutes=60)
+    async_session.add(exam)
+    await async_session.commit()
+    await async_session.refresh(exam)
     
     # Create task
     from app.models.task import TaskStage, TaskStatus
     
     task = Task(
         user_id=test_user.user_id,
+        exam_id=exam.exam_id,
         status=TaskStatus.QUEUED,
         current_stage=None,
         progress=0,
@@ -187,6 +199,10 @@ async def test_multiple_tasks_for_same_user(async_session):
     async_session.add(test_user)
     await async_session.commit()
     await async_session.refresh(test_user)
+    exam = Exam(user_id=test_user.user_id, name="Test Exam", subject="Test", academic_year="2025-2026", num_variants=1, duration_minutes=60)
+    async_session.add(exam)
+    await async_session.commit()
+    await async_session.refresh(exam)
     
     # Create 3 tasks for the same user
     from app.models.task import TaskStatus
@@ -195,6 +211,7 @@ async def test_multiple_tasks_for_same_user(async_session):
     for i in range(3):
         task = Task(
             user_id=test_user.user_id,
+            exam_id=exam.exam_id,
             status=TaskStatus.QUEUED,
             current_stage=None,
             progress=0,

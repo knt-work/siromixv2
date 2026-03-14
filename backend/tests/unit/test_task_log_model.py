@@ -12,12 +12,11 @@ from sqlalchemy import select
 from app.models.task import Task, TaskStage
 from app.models.task_log import TaskLog, LogLevel
 
-
 @pytest.mark.asyncio
-async def test_task_log_creation(async_session, test_user):
+async def test_task_log_creation(async_session, test_user, test_exam):
     """Test basic task log creation."""
     # Create a task first
-    task = Task(user_id=test_user.user_id)
+    task = Task(user_id=test_user.user_id, exam_id=test_exam.exam_id)
     async_session.add(task)
     await async_session.commit()
     await async_session.refresh(task)
@@ -44,9 +43,9 @@ async def test_task_log_creation(async_session, test_user):
 
 
 @pytest.mark.asyncio
-async def test_task_log_with_data_json(async_session, test_user):
+async def test_task_log_with_data_json(async_session, test_user, test_exam):
     """Test log creation with structured data_json."""
-    task = Task(user_id=test_user.user_id)
+    task = Task(user_id=test_user.user_id, exam_id=test_exam.exam_id)
     async_session.add(task)
     await async_session.commit()
     
@@ -73,9 +72,9 @@ async def test_task_log_with_data_json(async_session, test_user):
 
 
 @pytest.mark.asyncio
-async def test_task_log_all_log_levels(async_session, test_user):
+async def test_task_log_all_log_levels(async_session, test_user, test_exam):
     """Test creating logs with different log levels."""
-    task = Task(user_id=test_user.user_id)
+    task = Task(user_id=test_user.user_id, exam_id=test_exam.exam_id)
     async_session.add(task)
     await async_session.commit()
     
@@ -122,9 +121,9 @@ async def test_task_log_all_log_levels(async_session, test_user):
 
 
 @pytest.mark.asyncio
-async def test_task_log_null_stage(async_session, test_user):
+async def test_task_log_null_stage(async_session, test_user, test_exam):
     """Test that stage can be null for general task logs."""
-    task = Task(user_id=test_user.user_id)
+    task = Task(user_id=test_user.user_id, exam_id=test_exam.exam_id)
     async_session.add(task)
     await async_session.commit()
     
@@ -144,9 +143,9 @@ async def test_task_log_null_stage(async_session, test_user):
 
 
 @pytest.mark.asyncio
-async def test_task_log_task_relationship(async_session, test_user):
+async def test_task_log_task_relationship(async_session, test_user, test_exam):
     """Test relationship between TaskLog and Task."""
-    task = Task(user_id=test_user.user_id)
+    task = Task(user_id=test_user.user_id, exam_id=test_exam.exam_id)
     async_session.add(task)
     await async_session.commit()
     await async_session.refresh(task)
@@ -177,9 +176,9 @@ async def test_task_log_task_relationship(async_session, test_user):
 
 
 @pytest.mark.asyncio
-async def test_task_log_cascade_delete(async_session, test_user):
+async def test_task_log_cascade_delete(async_session, test_user, test_exam):
     """Test that logs are deleted when parent task is deleted."""
-    task = Task(user_id=test_user.user_id)
+    task = Task(user_id=test_user.user_id, exam_id=test_exam.exam_id)
     async_session.add(task)
     await async_session.commit()
     
@@ -213,11 +212,11 @@ async def test_task_log_cascade_delete(async_session, test_user):
 
 
 @pytest.mark.asyncio
-async def test_task_log_ordering(async_session, test_user):
+async def test_task_log_ordering(async_session, test_user, test_exam):
     """Test that logs are ordered by timestamp."""
     import asyncio
     
-    task = Task(user_id=test_user.user_id)
+    task = Task(user_id=test_user.user_id, exam_id=test_exam.exam_id)
     async_session.add(task)
     await async_session.commit()
     
@@ -264,9 +263,9 @@ async def test_task_log_ordering(async_session, test_user):
 
 
 @pytest.mark.asyncio
-async def test_task_log_complex_data_json(async_session, test_user):
+async def test_task_log_complex_data_json(async_session, test_user, test_exam):
     """Test log with complex nested JSONB data."""
-    task = Task(user_id=test_user.user_id)
+    task = Task(user_id=test_user.user_id, exam_id=test_exam.exam_id)
     async_session.add(task)
     await async_session.commit()
     
@@ -307,9 +306,9 @@ async def test_task_log_complex_data_json(async_session, test_user):
 
 
 @pytest.mark.asyncio
-async def test_task_log_with_task_stage_enum(async_session, test_user):
+async def test_task_log_with_task_stage_enum(async_session, test_user, test_exam):
     """Test log creation with TaskStage enum value as stage."""
-    task = Task(user_id=test_user.user_id)
+    task = Task(user_id=test_user.user_id, exam_id=test_exam.exam_id)
     async_session.add(task)
     await async_session.commit()
     
@@ -329,9 +328,9 @@ async def test_task_log_with_task_stage_enum(async_session, test_user):
 
 
 @pytest.mark.asyncio
-async def test_task_log_timestamp_auto_populate(async_session, test_user):
+async def test_task_log_timestamp_auto_populate(async_session, test_user, test_exam):
     """Test that timestamp is automatically populated on creation."""
-    task = Task(user_id=test_user.user_id)
+    task = Task(user_id=test_user.user_id, exam_id=test_exam.exam_id)
     async_session.add(task)
     await async_session.commit()
     
@@ -349,9 +348,9 @@ async def test_task_log_timestamp_auto_populate(async_session, test_user):
 
 
 @pytest.mark.asyncio
-async def test_task_log_multiple_stages_same_task(async_session, test_user):
+async def test_task_log_multiple_stages_same_task(async_session, test_user, test_exam):
     """Test creating logs for different stages of the same task."""
-    task = Task(user_id=test_user.user_id)
+    task = Task(user_id=test_user.user_id, exam_id=test_exam.exam_id)
     async_session.add(task)
     await async_session.commit()
     
@@ -389,9 +388,9 @@ async def test_task_log_multiple_stages_same_task(async_session, test_user):
 
 
 @pytest.mark.asyncio
-async def test_task_log_error_with_exception_data(async_session, test_user):
+async def test_task_log_error_with_exception_data(async_session, test_user, test_exam):
     """Test error log with exception details in data_json."""
-    task = Task(user_id=test_user.user_id)
+    task = Task(user_id=test_user.user_id, exam_id=test_exam.exam_id)
     async_session.add(task)
     await async_session.commit()
     

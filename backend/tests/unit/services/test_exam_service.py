@@ -201,6 +201,38 @@ class TestExamServiceCreate:
         # Restore original commit
         async_session.commit = original_commit
     
+    async def test_create_exam_celery_enqueue_failure(
+        self,
+        async_session: AsyncSession,
+        mock_storage_client,
+        exam_create_data,
+        mock_upload_file,
+        test_user
+    ):
+        """Test that Celery enqueue failure raises HTTPException 500."""
+        # Arrange
+        service = ExamService(async_session, mock_storage_client)
+        user_id = test_user.user_id
+        
+        # Mock process_task.delay to raise exception (Celery connection failure)
+        with patch('app.services.exam_service.process_task') as mock_celery:
+            mock_celery.delay.side_effect = Exception("Celery broker connection refused")
+            
+            # Act & Assert
+            with pytest.raises(HTTPException) as exc_info:
+                await service.create_exam_with_upload(
+                    exam_data=exam_create_data,
+                    file=mock_upload_file,
+                    user_id=user_id
+                )
+            
+            # Verify 500 status code
+            assert exc_info.value.status_code == 500
+            assert "internal error" in exc_info.value.detail.lower() or "try again" in exc_info.value.detail.lower()
+            
+            # Note: Exam and Task records may be committed before Celery failure
+            # This is expected behavior - orphaned records can be manually requeued
+    
     async def test_create_exam_multiple_variants(
         self,
         async_session: AsyncSession,

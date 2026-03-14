@@ -21,6 +21,7 @@ from sqlalchemy.pool import StaticPool
 from app.core.database import Base, get_db
 from app.main import app
 from app.models.user import User
+from app.models.exam import Exam, ExamStatus
 from app.models.task import Task, TaskStatus
 from app.models.task_log import TaskLog, LogLevel
 import uuid
@@ -97,11 +98,30 @@ async def test_user(async_session: AsyncSession) -> User:
 
 
 @pytest_asyncio.fixture(scope="function")
-async def test_task(async_session: AsyncSession, test_user: User) -> Task:
+async def test_exam(async_session: AsyncSession, test_user: User) -> Exam:
+    """Create a test exam."""
+    exam = Exam(
+        user_id=test_user.user_id,
+        name="Test Exam",
+        subject="Mathematics",
+        academic_year="2025-2026",
+        num_variants=1,
+        duration_minutes=60,
+        status=ExamStatus.DRAFT,
+    )
+    async_session.add(exam)
+    await async_session.commit()
+    await async_session.refresh(exam)
+    return exam
+
+
+@pytest_asyncio.fixture(scope="function")
+async def test_task(async_session: AsyncSession, test_user: User, test_exam: Exam) -> Task:
     """Create a test task."""
     task = Task(
         task_id=uuid.uuid4(),
         user_id=test_user.user_id,
+        exam_id=test_exam.exam_id,
         status=TaskStatus.QUEUED,
         progress=0,
         retry_count_by_stage={},

@@ -12,7 +12,7 @@ import uuid
 from app.main import app
 from app.core.database import get_db
 from app.models.task import Task, TaskStatus, TaskStage
-from tests.utils import create_test_user
+from tests.utils import create_test_user, create_test_exam
 
 
 @pytest.mark.asyncio
@@ -24,9 +24,11 @@ async def test_retry_failed_task(async_session):
         google_sub="retry_user",
         email="retry@example.com"
     )
+    exam = await create_test_exam(async_session, user)
     
     task = Task(
         user_id=user.user_id,
+        exam_id=exam.exam_id,
         status=TaskStatus.FAILED,
         current_stage=TaskStage.AI_ANALYSIS,
         progress=60,
@@ -89,9 +91,11 @@ async def test_retry_completed_task(async_session):
         google_sub="completed_retry_user",
         email="completed_retry@example.com"
     )
+    exam = await create_test_exam(async_session, user)
     
     task = Task(
         user_id=user.user_id,
+        exam_id=exam.exam_id,
         status=TaskStatus.COMPLETED,
         current_stage=TaskStage.RENDER_DOCX,
         progress=100,
@@ -142,9 +146,11 @@ async def test_retry_running_task(async_session):
         google_sub="running_retry_user",
         email="running_retry@example.com"
     )
+    exam = await create_test_exam(async_session, user)
     
     task = Task(
         user_id=user.user_id,
+        exam_id=exam.exam_id,
         status=TaskStatus.RUNNING,
         current_stage=TaskStage.SHUFFLE,
         progress=80,
@@ -246,9 +252,11 @@ async def test_retry_forbidden_other_user(async_session):
         google_sub="task_owner_retry",
         email="owner_retry@example.com"
     )
+    exam = await create_test_exam(async_session, owner)
     
     task = Task(
         user_id=owner.user_id,
+        exam_id=exam.exam_id,
         status=TaskStatus.FAILED,
         current_stage=TaskStage.AI_UNDERSTANDING,
         progress=40,

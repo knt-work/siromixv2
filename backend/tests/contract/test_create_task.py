@@ -10,19 +10,20 @@ from unittest.mock import patch, AsyncMock, MagicMock
 
 from app.main import app
 from app.core.database import get_db
-from tests.utils import create_test_user
+from tests.utils import create_test_user, create_test_exam
 
 
 @pytest.mark.asyncio
 async def test_create_task_with_valid_token(async_session):
     """Test POST /api/v1/tasks returns 201 with valid token."""
-    # Create a test user
+    # Create a test user and exam
     user = await create_test_user(
         async_session,
         google_sub="task_creator",
         email="creator@example.com",
         display_name="Task Creator"
     )
+    exam = await create_test_exam(async_session, user)
     
     # Mock Google token verification
     mock_verify = AsyncMock(return_value={
@@ -47,7 +48,7 @@ async def test_create_task_with_valid_token(async_session):
             with patch("app.tasks.process_task.process_task.delay", mock_celery_task.delay):
                 response = await client.post(
                     "/api/v1/tasks",
-                    json={"simulate_failure_stage": None},
+                    json={"exam_id": str(exam.exam_id), "simulate_failure_stage": None},
                     headers={"Authorization": "Bearer valid.test.token"}
                 )
     
@@ -74,6 +75,7 @@ async def test_create_task_with_simulate_failure(async_session):
         google_sub="task_creator_sim",
         email="sim@example.com"
     )
+    exam = await create_test_exam(async_session, user)
     
     mock_verify = AsyncMock(return_value={
         "google_sub": "task_creator_sim",
@@ -95,7 +97,7 @@ async def test_create_task_with_simulate_failure(async_session):
             with patch("app.tasks.process_task.process_task.delay", mock_celery_task.delay):
                 response = await client.post(
                     "/api/v1/tasks",
-                    json={"simulate_failure_stage": "ai_understanding"},
+                    json={"exam_id": str(exam.exam_id), "simulate_failure_stage": "ai_understanding"},
                     headers={"Authorization": "Bearer valid.test.token"}
                 )
     
@@ -176,14 +178,14 @@ async def test_create_task_with_invalid_simulate_failure_stage(async_session):
     
     app.dependency_overrides.clear()
     
-    assert response.status_code == 422
+    assert response.status_code == 400
     data = response.json()
     assert "detail" in data
 
 
 @pytest.mark.asyncio
 async def test_create_task_empty_body(async_session):
-    """Test POST /api/v1/tasks with empty body (should succeed with defaults)."""
+    """Test POST /api/v1/tasks without exam_id returns 422 (required field)."""
     user = await create_test_user(
         async_session,
         google_sub="task_creator_empty",
@@ -196,9 +198,6 @@ async def test_create_task_empty_body(async_session):
         "display_name": "Empty User"
     })
     
-    mock_celery_task = MagicMock()
-    mock_celery_task.delay = MagicMock(return_value=MagicMock(id="mock-task-id"))
-    
     async def override_get_db():
         yield async_session
     
@@ -207,18 +206,18 @@ async def test_create_task_empty_body(async_session):
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         with patch("app.core.deps.verify_google_token", mock_verify):
-            with patch("app.tasks.process_task.process_task.delay", mock_celery_task.delay):
-                response = await client.post(
-                    "/api/v1/tasks",
-                    json={},
-                    headers={"Authorization": "Bearer valid.test.token"}
-                )
+            response = await client.post(
+                "/api/v1/tasks",
+                json={},
+                headers={"Authorization": "Bearer valid.test.token"}
+            )
     
     app.dependency_overrides.clear()
     
-    assert response.status_code == 201
+    # exam_id is now required - empty body returns 400 (app maps 422 to 400)
+    assert response.status_code == 400
     data = response.json()
-    assert data["status"] == "queued"
+    assert "detail" in data
 
 
 @pytest.mark.asyncio
@@ -229,6 +228,7 @@ async def test_create_multiple_tasks_same_user(async_session):
         google_sub="multi_task_user",
         email="multi@example.com"
     )
+    exam = await create_test_exam(async_session, user)
     
     mock_verify = AsyncMock(return_value={
         "google_sub": "multi_task_user",
@@ -251,14 +251,14 @@ async def test_create_multiple_tasks_same_user(async_session):
                 # Create first task
                 response1 = await client.post(
                     "/api/v1/tasks",
-                    json={},
+                    json={"exam_id": str(exam.exam_id)},
                     headers={"Authorization": "Bearer valid.test.token"}
                 )
                 
                 # Create second task
                 response2 = await client.post(
                     "/api/v1/tasks",
-                    json={},
+                    json={"exam_id": str(exam.exam_id)},
                     headers={"Authorization": "Bearer valid.test.token"}
                 )
     

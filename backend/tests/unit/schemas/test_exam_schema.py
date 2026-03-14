@@ -24,6 +24,7 @@ def test_exam_create_valid():
         "academic_year": "2025-2026",
         "grade_level": "Grade 10",
         "num_variants": 5,
+        "duration_minutes": 90,
         "instructions": "Use blue or black pen only."
     }
     
@@ -35,6 +36,7 @@ def test_exam_create_valid():
     assert exam.academic_year == "2025-2026"
     assert exam.grade_level == "Grade 10"
     assert exam.num_variants == 5
+    assert exam.duration_minutes == 90
     assert exam.instructions == "Use blue or black pen only."
 
 
@@ -44,7 +46,8 @@ def test_exam_create_minimal():
         "name": "Minimal Exam",
         "subject": "Physics",
         "academic_year": "2026",
-        "num_variants": 3
+        "num_variants": 3,
+        "duration_minutes": 60,
     }
     
     exam = ExamCreate(**data)
@@ -53,6 +56,7 @@ def test_exam_create_minimal():
     assert exam.subject == "Physics"
     assert exam.academic_year == "2026"
     assert exam.num_variants == 3
+    assert exam.duration_minutes == 60
     assert exam.grade_level is None
     assert exam.instructions is None
 
@@ -158,6 +162,7 @@ def test_exam_create_strip_whitespace():
         "academic_year": "  2025-2026  ",
         "grade_level": "  Grade 10  ",
         "num_variants": 5,
+        "duration_minutes": 60,
         "instructions": "  Use blue pen only.  "
     }
     
@@ -209,6 +214,7 @@ def test_exam_response_from_orm():
         'academic_year': '2025-2026',
         'grade_level': 'Grade 10',
         'num_variants': 5,
+        'duration_minutes': 90,
         'instructions': 'Use blue or black pen only.',
         'status': ExamStatus.DRAFT,
         'created_at': datetime.utcnow(),
@@ -243,6 +249,7 @@ def test_exam_list_response():
         'academic_year': '2026',
         'grade_level': None,
         'num_variants': 1,
+        'duration_minutes': 60,
         'instructions': None,
         'status': ExamStatus.DRAFT,
         'created_at': datetime.utcnow(),

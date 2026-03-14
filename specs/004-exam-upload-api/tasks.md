@@ -136,17 +136,17 @@
 
 ### Tests for User Story 4 (MANDATORY - Write FIRST, ensure they FAIL) ✅
 
-- [ ] T039 [P] [US4] Unit tests for error handling in backend/tests/unit/services/test_exam_service.py (test storage unavailable → raises HTTPException 503 and no DB records, DB failure after file upload → deletes file and raises 500, Celery enqueue failure → logs error and raises 500)
-- [ ] T040 [P] [US4] Contract tests for error responses in backend/tests/contract/test_exams_api.py (test 503 for storage unavailable, 500 for DB failure, 504 for timeout, 507 for quota exceeded)
-- [ ] T041 [P] [US4] Integration tests for transaction rollback in backend/tests/integration/test_exam_upload.py (test exam created but task creation fails → exam rolled back, file uploaded but DB fails → file deleted)
+- [X] T039 [P] [US4] Unit tests for error handling in backend/tests/unit/services/test_exam_service.py (test storage unavailable → raises HTTPException 503 and no DB records, DB failure after file upload → deletes file and raises 500, Celery enqueue failure → logs error and raises 500)
+- [X] T040 [P] [US4] Contract tests for error responses in backend/tests/contract/test_exams_api.py (test 503 for storage unavailable, 500 for DB failure, 504 for timeout, 507 for quota exceeded)
+- [X] T041 [P] [US4] Integration tests for transaction rollback in backend/tests/integration/test_exam_upload.py (test exam created but task creation fails → exam rolled back, file uploaded but DB fails → file deleted)
 
 ### Implementation for User Story 4
 
-- [ ] T042 [US4] Add exception handling for storage errors in ExamService.create_exam_with_upload in backend/app/services/exam_service.py (catch boto3 exceptions, map to HTTPException 503 with user-friendly message, log detailed error with stack trace)
-- [ ] T043 [US4] Add transaction rollback logic in ExamService.create_exam_with_upload in backend/app/services/exam_service.py (wrap DB operations in try-except, rollback on failure, call storage delete_file if transaction fails after upload)
-- [ ] T044 [US4] Add exception handling for database errors in backend/app/api/v1/endpoints/exams.py (catch SQLAlchemy exceptions, return HTTPException 500 with generic user message, log detailed error)
-- [ ] T045 [US4] Add exception handling for Celery enqueue failures in ExamService.create_exam_with_upload in backend/app/services/exam_service.py (catch Celery exceptions, log error, return 500 - note: record already committed, task can be manually requeued)
-- [ ] T046 [P] [US4] Add structured logging throughout exam creation flow in backend/app/services/exam_service.py (log: upload start/success/failure, DB transaction start/commit/rollback, Celery enqueue success/failure with context: user_id, exam_name, file_size)
+- [X] T042 [US4] Add exception handling for storage errors in ExamService.create_exam_with_upload in backend/app/services/exam_service.py (catch boto3 exceptions, map to HTTPException 503 with user-friendly message, log detailed error with stack trace)
+- [X] T043 [US4] Add transaction rollback logic in ExamService.create_exam_with_upload in backend/app/services/exam_service.py (wrap DB operations in try-except, rollback on failure, call storage delete_file if transaction fails after upload)
+- [X] T044 [US4] Add exception handling for database errors in backend/app/api/v1/endpoints/exams.py (catch SQLAlchemy exceptions, return HTTPException 500 with generic user message, log detailed error)
+- [X] T045 [US4] Add exception handling for Celery enqueue failures in ExamService.create_exam_with_upload in backend/app/services/exam_service.py (catch Celery exceptions, log error, return 500 - note: record already committed, task can be manually requeued)
+- [X] T046 [P] [US4] Add structured logging throughout exam creation flow in backend/app/services/exam_service.py (log: upload start/success/failure, DB transaction start/commit/rollback, Celery enqueue success/failure with context: user_id, exam_name, file_size)
 
 **Checkpoint**: Error handling robust - production-ready reliability with clear user feedback
 

@@ -41,6 +41,7 @@ async def create_task(
     task = await task_service.create_task(
         db=db,
         user_id=current_user.user_id,
+        exam_id=task_data.exam_id,
         simulate_failure_stage=task_data.simulate_failure_stage,
     )
     

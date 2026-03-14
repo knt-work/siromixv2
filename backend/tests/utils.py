@@ -10,6 +10,7 @@ from uuid import uuid4
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
+from app.models.exam import Exam, ExamStatus
 from app.models.task import Task, TaskStatus, TaskStage
 from app.models.task_log import TaskLog, LogLevel
 
@@ -36,9 +37,35 @@ async def create_test_user(
     return user
 
 
+async def create_test_exam(
+    session: AsyncSession,
+    user: User,
+    name: str = "Test Exam",
+    subject: str = "Mathematics",
+    academic_year: str = "2025-2026",
+    num_variants: int = 1,
+    duration_minutes: int = 60,
+) -> Exam:
+    """Create a test exam in the database."""
+    exam = Exam(
+        user_id=user.user_id,
+        name=name,
+        subject=subject,
+        academic_year=academic_year,
+        num_variants=num_variants,
+        duration_minutes=duration_minutes,
+        status=ExamStatus.DRAFT,
+    )
+    session.add(exam)
+    await session.commit()
+    await session.refresh(exam)
+    return exam
+
+
 async def create_test_task(
     session: AsyncSession,
     user: User,
+    exam: Exam,
     status: TaskStatus = TaskStatus.QUEUED,
     current_stage: TaskStage = None,
     progress: int = 0,
@@ -48,6 +75,7 @@ async def create_test_task(
     task = Task(
         task_id=uuid4(),
         user_id=user.user_id,
+        exam_id=exam.exam_id,
         status=status,
         current_stage=current_stage,
         progress=progress,

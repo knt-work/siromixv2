@@ -13,7 +13,7 @@ from app.main import app
 from app.core.database import get_db
 from app.models.task import Task, TaskStatus, TaskStage
 from app.models.task_log import TaskLog, LogLevel
-from tests.utils import create_test_user
+from tests.utils import create_test_user, create_test_exam
 
 
 @pytest.mark.asyncio
@@ -26,10 +26,12 @@ async def test_get_task_with_valid_token(async_session):
         email="owner@example.com",
         display_name="Task Owner"
     )
+    exam = await create_test_exam(async_session, user)
     
     # Create a task
     task = Task(
         user_id=user.user_id,
+        exam_id=exam.exam_id,
         status=TaskStatus.RUNNING,
         current_stage=TaskStage.AI_UNDERSTANDING,
         progress=40,
@@ -155,9 +157,11 @@ async def test_get_task_forbidden_other_user(async_session):
         google_sub="task_owner_403",
         email="owner403@example.com"
     )
+    exam = await create_test_exam(async_session, owner)
     
     task = Task(
         user_id=owner.user_id,
+        exam_id=exam.exam_id,
         status=TaskStatus.QUEUED
     )
     async_session.add(task)
@@ -205,9 +209,11 @@ async def test_get_task_completed_status(async_session):
         google_sub="completed_user",
         email="completed@example.com"
     )
+    exam = await create_test_exam(async_session, user)
     
     task = Task(
         user_id=user.user_id,
+        exam_id=exam.exam_id,
         status=TaskStatus.COMPLETED,
         current_stage=TaskStage.RENDER_DOCX,
         progress=100,
@@ -259,9 +265,11 @@ async def test_get_task_failed_status(async_session):
         google_sub="failed_user",
         email="failed@example.com"
     )
+    exam = await create_test_exam(async_session, user)
     
     task = Task(
         user_id=user.user_id,
+        exam_id=exam.exam_id,
         status=TaskStatus.FAILED,
         current_stage=TaskStage.AI_ANALYSIS,
         progress=60,

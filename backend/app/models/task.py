@@ -66,12 +66,12 @@ class Task(Base):
         comment="Owner of the task"
     )
     
-    # Foreign key to exam (optional)
-    exam_id: Mapped[uuid.UUID | None] = mapped_column(
+    # Foreign key to exam (required)
+    exam_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("exams.exam_id", ondelete="CASCADE"),
-        nullable=True,
+        nullable=False,
         index=True,
-        comment="Associated exam (if any)"
+        comment="Associated exam"
     )
     
     # Task status

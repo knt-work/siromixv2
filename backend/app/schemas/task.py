@@ -33,7 +33,12 @@ class TaskBase(BaseModel):
 class TaskCreate(TaskBase):
     """Schema for creating a new task."""
     
-    # MVP: No input parameters, tasks run mock pipeline
+    exam_id: uuid.UUID = Field(
+        ...,
+        description="Associated exam ID (required)"
+    )
+    
+    # MVP: No additional input parameters, tasks run mock pipeline
     simulate_failure_stage: TaskStage | None = Field(
         None,
         description="Stage at which to simulate failure (for testing)"

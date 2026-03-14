@@ -54,6 +54,13 @@ class ExamCreate(BaseModel):
         examples=[3, 5, 10]
     )
     
+    duration_minutes: int = Field(
+        ...,
+        gt=0,
+        description="Exam duration in minutes",
+        examples=[45, 60, 90, 120]
+    )
+    
     instructions: Optional[str] = Field(
         None,
         description="Optional exam-level instructions",
@@ -80,6 +87,7 @@ class ExamCreate(BaseModel):
                     "subject": "Mathematics",
                     "academic_year": "2025-2026",
                     "grade_level": "Grade 10",
+                    "duration_minutes": 60,
                     "num_variants": 5,
                     "instructions": "Use blue or black pen only. Show all work for partial credit."
                 }
@@ -120,6 +128,12 @@ class ExamUpdate(BaseModel):
         le=100
     )
     
+    duration_minutes: Optional[int] = Field(
+        None,
+        gt=0,
+        description="Exam duration in minutes"
+    )
+    
     instructions: Optional[str] = None
     
     status: Optional[ExamStatus] = Field(
@@ -152,6 +166,7 @@ class ExamResponse(BaseModel):
     academic_year: str
     grade_level: Optional[str] = None
     num_variants: int
+    duration_minutes: int
     instructions: Optional[str] = None
     status: ExamStatus
     created_at: datetime = Field(..., description="UTC creation timestamp")
@@ -168,6 +183,7 @@ class ExamResponse(BaseModel):
                     "subject": "Mathematics",
                     "academic_year": "2025-2026",
                     "grade_level": "Grade 10",
+                    "duration_minutes": 60,
                     "num_variants": 5,
                     "instructions": "Use blue or black pen only.",
                     "status": "draft",

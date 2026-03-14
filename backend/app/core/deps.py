@@ -11,6 +11,7 @@ import logging
 
 from app.core.database import get_db
 from app.core.auth import verify_google_token, extract_bearer_token, GoogleTokenError
+from app.core.storage import StorageClient
 from app.models.user import User
 from app.services.user_service import get_or_create_user
 
@@ -108,3 +109,24 @@ async def get_current_user_optional(
         return await get_current_user(authorization, db)
     except HTTPException:
         return None
+
+
+def get_storage_client() -> StorageClient:
+    """
+    FastAPI dependency to get object storage client.
+    
+    Returns a configured StorageClient instance for S3-compatible storage operations.
+    
+    Returns:
+        StorageClient: Configured storage client instance
+        
+    Usage:
+        @app.post("/upload")
+        async def upload_file(
+            file: UploadFile,
+            storage: StorageClient = Depends(get_storage_client)
+        ):
+            await storage.upload_file(file.file, "path/to/file.docx")
+            return {"status": "uploaded"}
+    """
+    return StorageClient()

@@ -12,6 +12,7 @@ dependencies = [
     # Web Framework
     "fastapi>=0.104.0",
     "uvicorn[standard]>=0.24.0",
+    "python-multipart>=0.0.6",  # Required for FastAPI Form() and File() uploads
     
     # Database
     "sqlalchemy[asyncio]>=2.0.0",
@@ -47,6 +48,7 @@ dev = [
     "pytest>=7.4.0",
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.1.0",
+    "aiosqlite>=0.19.0",  # Async SQLite driver for tests
     
     # Linting & Formatting
     "ruff>=0.1.0",

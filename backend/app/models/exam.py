@@ -37,6 +37,7 @@ class Exam(Base):
         academic_year: Academic year (e.g., "2025-2026")
         grade_level: Optional grade/class level
         num_variants: Number of exam variants to generate
+        duration_minutes: Exam duration in minutes
         instructions: Optional exam-level instructions
         status: Exam lifecycle status (draft/processing/completed)
         created_at: Record creation timestamp
@@ -51,6 +52,7 @@ class Exam(Base):
     academic_year: Mapped[str] = mapped_column(String(50), nullable=False)
     grade_level: Mapped[str | None] = mapped_column(String(100), nullable=True)
     num_variants: Mapped[int] = mapped_column(Integer, nullable=False)
+    duration_minutes: Mapped[int] = mapped_column(Integer, nullable=False)
     instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[ExamStatus] = mapped_column(Enum(ExamStatus, native_enum=False), nullable=False, default=ExamStatus.DRAFT, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now(), index=True)
@@ -63,4 +65,5 @@ class Exam(Base):
     
     __table_args__ = (
         CheckConstraint("num_variants > 0", name="check_num_variants_positive"),
+        CheckConstraint("duration_minutes > 0", name="check_duration_minutes_positive"),
     )

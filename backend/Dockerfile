@@ -20,12 +20,16 @@ RUN apt-get update && apt-get install -y \
 
 # Copy dependency files
 COPY pyproject.toml ./
+COPY README.md ./
+
+# Create app directory (required for editable install)
+RUN mkdir -p app
 
 # Install Python dependencies
 RUN pip install --upgrade pip && \
     pip install -e ".[dev]"
 
-# Copy application code
+# Copy application code (will overwrite the empty app directory)
 COPY . .
 
 # Create non-root user

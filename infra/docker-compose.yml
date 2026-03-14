@@ -45,6 +45,55 @@ services:
       - siromix-network
 
   # ============================================================
+  # MinIO (Object Storage - S3 Compatible)
+  # ============================================================
+  minio:
+    image: minio/minio:latest
+    container_name: siromix-minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "9000:9000"  # API port
+      - "9001:9001"  # Console port
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    networks:
+      - siromix-network
+
+  # ============================================================
+  # MinIO Client (Create bucket on startup)
+  # ============================================================
+  minio-setup:
+    image: minio/mc:latest
+    container_name: siromix-minio-setup
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      echo 'Waiting for MinIO to be ready...' &&
+      sleep 5 &&
+      /usr/bin/mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER:-minioadmin} ${MINIO_ROOT_PASSWORD:-minioadmin} &&
+      if ! /usr/bin/mc ls myminio/siromix-exams 2>/dev/null; then
+        echo 'Creating bucket: siromix-exams' &&
+        /usr/bin/mc mb myminio/siromix-exams &&
+        /usr/bin/mc anonymous set download myminio/siromix-exams;
+      else
+        echo 'Bucket siromix-exams already exists';
+      fi &&
+      echo 'MinIO setup complete'
+      "
+    networks:
+      - siromix-network
+
+  # ============================================================
   # Backend API (FastAPI)
   # ============================================================
   backend:
@@ -62,6 +111,13 @@ services:
       # Celery
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
+      
+      # Object Storage (Feature 004)
+      STORAGE_BUCKET_NAME: siromix-exams
+      STORAGE_ENDPOINT_URL: http://minio:9000
+      STORAGE_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minioadmin}
+      STORAGE_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      STORAGE_REGION: us-east-1
       
       # Google OAuth
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
@@ -82,6 +138,8 @@ services:
       db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     command: >
       sh -c "
@@ -104,6 +162,13 @@ services:
       # Database
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-siromix}:${POSTGRES_PASSWORD:-siromix_dev_password}@db:5432/${POSTGRES_DB:-siromix_v2}
       
+      # Object Storage (Feature 004)
+      STORAGE_BUCKET_NAME: siromix-exams
+      STORAGE_ENDPOINT_URL: http://minio:9000
+      STORAGE_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minioadmin}
+      STORAGE_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      STORAGE_REGION: us-east-1
+      
       # Redis
       REDIS_URL: redis://redis:6379/0
       
@@ -121,6 +186,8 @@ services:
       db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     command: >
       sh -c "
@@ -166,7 +233,7 @@ services:
       sh -c "
         echo 'Installing frontend dependencies...' &&
         npm install &&
-        echo 'Starting Next.js development server...' &&
+        echo 'Starting Next.js development server..' &&
         npm run dev
       "
     networks:
@@ -181,6 +248,8 @@ volumes:
     name: siromix_postgres_data
   redis_data:
     name: siromix_redis_data
+  minio_data:
+    name: siromix_minio_data
 
 # ============================================================
 # Networks

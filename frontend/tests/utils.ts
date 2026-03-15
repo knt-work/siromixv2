@@ -19,6 +19,7 @@ export function resetStores() {
     isAuthenticated: false,
     isLoading: false,
     redirectPath: null,
+    staleMockSession: false,
   });
 
   // Reset task store

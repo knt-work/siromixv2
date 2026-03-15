@@ -10,6 +10,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
+import { Avatar } from '@/components/ui/Avatar';
 import { UI_TEXT } from '@/constants/content';
 import type { User } from '@/types';
 
@@ -70,10 +71,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               aria-haspopup="true"
             >
               <div className="w-10 h-10 rounded-full overflow-hidden shadow-[0px_2px_5px_0px_#171a1f17,_0px_0px_2px_0px_#171a1f1f]">
-                <img 
-                  src={user.avatar_url || '/assets/default-avatar.webp'} 
+                <Avatar
+                  src={user.avatar_url ?? undefined}
                   alt={user.full_name}
-                  className="w-full h-full object-cover" 
+                  size="md"
+                  fallbackText={user.full_name}
                 />
               </div>
               <span className="hidden sm:block text-sm font-medium text-[#171a1f]">

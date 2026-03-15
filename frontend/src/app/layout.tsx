@@ -13,7 +13,9 @@ import { useEffect } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { useAuthStore } from '@/lib/state/auth-store';
 import { useRouter } from 'next/navigation';
+import { signOut } from 'next-auth/react';
 import Head from 'next/head';
+import { Providers } from './providers';
 
 // Configure Inter font with Vietnamese support
 const inter = Inter({ 
@@ -30,7 +32,7 @@ export default function RootLayout({
   const { user, checkAuth, logout } = useAuthStore();
   const router = useRouter();
 
-  // Hydrate auth state from localStorage on mount
+  // Hydrate auth state from localStorage on mount (also detects stale mock tokens)
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
@@ -39,8 +41,9 @@ export default function RootLayout({
     router.push('/login');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     logout();
+    await signOut({ redirect: false });
     router.push('/');
   };
 
@@ -60,8 +63,10 @@ export default function RootLayout({
         <meta name="twitter:card" content="summary_large_image" />
       </Head>
       <body className={`min-h-screen bg-background-main font-sans antialiased ${inter.className}`}>
-        <Navbar user={user} onLogin={handleLogin} onLogout={handleLogout} />
-        <main>{children}</main>
+        <Providers>
+          <Navbar user={user} onLogin={handleLogin} onLogout={handleLogout} />
+          <main>{children}</main>
+        </Providers>
       </body>
     </html>
   );

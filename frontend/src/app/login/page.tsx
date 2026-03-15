@@ -1,23 +1,36 @@
 /**
  * Login Page
- * 
- * Simulated Google OAuth login flow.
- * Exact 1:1 implementation from html/SiroMix - Login Screen/src/App.tsx
+ *
+ * Google OAuth login via next-auth.
+ * Shows full-page spinner while OAuth is in progress.
+ * Displays error modal on backend failure or OAuth error.
  */
 
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { signIn, useSession } from 'next-auth/react';
 import { Spinner } from '@/components/ui/Spinner';
+import { Modal } from '@/components/shared/Modal';
 import { useAuthStore } from '@/lib/state/auth-store';
-import { simulateGoogleOAuth } from '@/lib/simulation/oauth';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isAuthenticated, redirectPath, setRedirectPath } = useAuthStore();
+  const searchParams = useSearchParams();
+  const { status } = useSession();
+  const { isAuthenticated, redirectPath, setRedirectPath } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errorModal, setErrorModal] = useState(false);
+
+  // Surface OAuth errors from next-auth callback URL (?error=...)
+  useEffect(() => {
+    const oauthError = searchParams.get('error');
+    if (oauthError) {
+      console.error('[Login] OAuth error from next-auth callback:', oauthError);
+      setErrorModal(true);
+    }
+  }, [searchParams]);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -28,25 +41,18 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, redirectPath, router, setRedirectPath]);
 
+  const loading = isLoading || status === 'loading';
+
   const handleGoogleLogin = async () => {
     setIsLoading(true);
-    setError(null);
-
-    try {
-      // Simulate Google OAuth flow (1-2 second delay)
-      const user = await simulateGoogleOAuth();
-      
-      // Update auth store with Trieu Kiem data
-      login(user);
-      
-      // Redirect will happen via useEffect above
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Đăng nhập thất bại');
-      setIsLoading(false);
-    }
+    const destination = redirectPath || '/';
+    await signIn('google', { callbackUrl: destination });
+    // signIn redirects; setIsLoading(false) only reached on error
+    setIsLoading(false);
   };
 
   return (
+    <>
     <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-white">
       <div className="w-full max-w-[560px] bg-white border border-[#dee1e6]/60 rounded-lg shadow-[0px_2px_5px_0px_#171a1f17,_0px_0px_2px_0px_#171a1f1f] p-8 md:p-[33px_33px_0_33px] flex flex-col items-center">
         <h1 className="text-[28px] leading-[39px] font-bold tracking-[-0.7px] text-center mb-3 text-[#171a1f]">
@@ -59,10 +65,10 @@ export default function LoginPage() {
 
         <button 
           onClick={handleGoogleLogin}
-          disabled={isLoading}
+          disabled={loading}
           className="w-full h-14 bg-[#9a94de] hover:bg-[#8a84ce] disabled:bg-[#9a94de]/50 text-white rounded-md shadow-[0px_2px_5px_0px_#171a1f17,_0px_0px_2px_0px_#171a1f1f] flex items-center justify-center relative transition-all active:scale-[0.99] disabled:cursor-not-allowed"
         >
-          {isLoading ? (
+          {loading ? (
             <Spinner size="md" variant="white" />
           ) : (
             <>
@@ -100,9 +106,9 @@ export default function LoginPage() {
           )}
         </button>
 
-        {error && (
+        {errorModal && (
           <div className="mt-4 w-full p-3 bg-[#d3595e]/10 border border-[#d3595e]/20 rounded-md">
-            <p className="text-sm text-[#d3595e] text-center">{error}</p>
+            <p className="text-sm text-[#d3595e] text-center">Đăng nhập thất bại. Vui lòng thử lại.</p>
           </div>
         )}
 
@@ -139,5 +145,17 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+
+    <Modal
+      isOpen={errorModal}
+      onClose={() => setErrorModal(false)}
+      title="Đăng nhập thất bại"
+      size="sm"
+    >
+      <p className="text-sm text-[#565d6d]">
+        Đã xảy ra lỗi trong quá trình đăng nhập với Google. Vui lòng thử lại.
+      </p>
+    </Modal>
+    </>
   );
 }

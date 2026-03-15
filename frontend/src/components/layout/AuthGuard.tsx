@@ -9,6 +9,7 @@
 
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { useAuthStore } from '@/lib/state/auth-store';
 import { Spinner } from '@/components/ui/Spinner';
 
@@ -24,11 +25,13 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
   redirectTo = '/login',
 }) => {
   const router = useRouter();
+  const { status } = useSession();
   const { isAuthenticated, isLoading, setRedirectPath } = useAuthStore();
 
   useEffect(() => {
-    // Only redirect if not loading, not authenticated, no fallback, and redirectTo is provided
-    if (!isLoading && !isAuthenticated && !fallback && redirectTo) {
+    // Only redirect if both next-auth and Zustand are done loading
+    if (status === 'loading' || isLoading) return;
+    if (!isAuthenticated && !fallback && redirectTo) {
       // Store current path for redirect after login
       const currentPath = window.location.pathname + window.location.search;
       if (currentPath !== redirectTo) {
@@ -36,10 +39,10 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
       }
       router.push(redirectTo);
     }
-  }, [isAuthenticated, isLoading, fallback, redirectTo, router, setRedirectPath]);
+  }, [isAuthenticated, isLoading, status, fallback, redirectTo, router, setRedirectPath]);
 
-  // Show loading state while checking auth
-  if (isLoading) {
+  // Show loading state while next-auth OR Zustand store is still resolving
+  if (status === 'loading' || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Spinner size="lg" variant="primary" label="Đang kiểm tra xác thực..." />

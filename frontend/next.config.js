@@ -6,7 +6,9 @@ const nextConfig = {
     API_BASE_URL: process.env.API_BASE_URL || 'http://localhost:8000',
   },
   images: {
-    domains: ['lh3.googleusercontent.com'], // Google profile images
+    remotePatterns: [
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
+    ],
   },
 }
 

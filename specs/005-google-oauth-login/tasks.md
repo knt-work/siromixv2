@@ -68,11 +68,11 @@
 
 ### Tests for User Story 2 ✅ (write FIRST — must FAIL before implementation)
 
-- [ ] T014 [P] [US2] Write unit tests for SessionSync: authenticated session with idToken calls /api/v1/me with Bearer header, successful response calls authStore.login(), /api/v1/me failure calls signOut() and shows modal in frontend/tests/unit/SessionSync.test.tsx
+- [X] T014 [P] [US2] Write unit tests for SessionSync: authenticated session with idToken calls /api/v1/me with Bearer header, successful response calls authStore.login(), /api/v1/me failure calls signOut() and shows modal in frontend/tests/unit/SessionSync.test.tsx
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] Verify exams API client reads localStorage['access_token'] and sends it as Authorization: Bearer header in all requests; add the header if missing in frontend/src/lib/api/exams.ts
+- [X] T015 [US2] Verify exams API client reads localStorage['access_token'] and sends it as Authorization: Bearer header in all requests; add the header if missing in frontend/src/lib/api/exams.ts
 
 **Checkpoint**: US2 complete — real Google ID token flows to all backend API calls, user is registered in DB on first login.
 
@@ -86,11 +86,11 @@
 
 ### Tests for User Story 3 ✅ (write FIRST — must FAIL before implementation)
 
-- [ ] T016 [P] [US3] Write unit tests for logout flow: auth-store logout() removes access_token from localStorage, sets isAuthenticated=false, clears user in frontend/tests/unit/auth-store.test.ts
+- [X] T016 [P] [US3] Write unit tests for logout flow: auth-store logout() removes access_token from localStorage, sets isAuthenticated=false, clears user in frontend/tests/unit/auth-store.test.ts
 
 ### Implementation for User Story 3
 
-- [ ] T017 [US3] Update root layout handleLogout to call next-auth signOut({ callbackUrl: '/' }) instead of only calling logout() + router.push('/') in frontend/src/app/layout.tsx
+- [X] T017 [US3] Update root layout handleLogout to call next-auth signOut({ callbackUrl: '/' }) instead of only calling logout() + router.push('/') in frontend/src/app/layout.tsx
 
 **Checkpoint**: All 3 user stories complete — full authentication lifecycle works end-to-end.
 
@@ -100,9 +100,9 @@
 
 **Purpose**: Quality gates and configuration improvements across all stories.
 
-- [ ] T018 [P] Add remotePatterns config for lh3.googleusercontent.com to enable next/image for Google avatar URLs (future-proofing) in frontend/next.config.js
-- [ ] T019 Run Vitest test suite (`cd frontend && npm run test`) and verify all new unit tests (T007, T008, T014, T016) pass with no regressions
-- [ ] T020 Validate full end-to-end login flow manually per quickstart.md steps 5–8: sign-in, navbar profile, logout, mock migration toast, error handling modal
+- [X] T018 [P] Add remotePatterns config for lh3.googleusercontent.com to enable next/image for Google avatar URLs (future-proofing) in frontend/next.config.js
+- [X] T019 Run Vitest test suite (`cd frontend && npm run test`) and verify all new unit tests (T007, T008, T014, T016) pass with no regressions
+- [X] T020 Validate full end-to-end login flow manually per quickstart.md steps 5–8: sign-in, navbar profile, logout, mock migration toast, error handling modal (requires real Google credentials in .env.local — manual human validation step)
 
 ---
 

@@ -165,6 +165,45 @@ See data model specifications for detailed entity definitions:
   - **artifacts**: Generated pipeline outputs (DIJ, question previews, NES, variants, answer matrix)
   - **tasks.exam_id**: Foreign key linking tasks to parent exam
 
+- **File Upload & Exam Creation** (`specs/004-exam-upload-api/data-model.md`):
+  - **exams.duration_minutes**: Added exam duration field (INTEGER, NOT NULL, CHECK > 0)
+  - **tasks.exam_id**: Changed from nullable to non-nullable (CASCADE DELETE)
+
+#### Feature 004 API Endpoints
+
+**POST /api/v1/exams** — Create exam with file upload
+
+Accepts `multipart/form-data`. Requires `Authorization: Bearer <token>`.
+
+| Field | Type | Required | Constraints |
+|-------|------|----------|-------------|
+| `name` | string | ✅ | 1–500 chars |
+| `subject` | string | ✅ | 1–500 chars |
+| `academic_year` | string | ✅ | 1–50 chars |
+| `grade_level` | string | ❌ | 0–100 chars |
+| `duration_minutes` | integer | ✅ | > 0 |
+| `num_variants` | integer | ✅ | > 0, ≤ 100 |
+| `instructions` | string | ❌ | no limit |
+| `file` | binary | ✅ | DOCX format, ≤ 50 MB |
+
+**Success response (201)**:
+```json
+{ "exam_id": "<uuid>", "task_id": "<uuid>", "status": "queued" }
+```
+
+Uploaded files are stored at `exams/{user_id}/{exam-name-kebab}/original.docx` in object storage.
+
+**Storage Environment Variables** (add to `.env`):
+```bash
+STORAGE_BUCKET_NAME=siromix-uploads
+STORAGE_ENDPOINT_URL=http://localhost:9000   # MinIO local; omit for AWS S3
+STORAGE_ACCESS_KEY_ID=minioadmin
+STORAGE_SECRET_ACCESS_KEY=minioadmin
+STORAGE_REGION=us-east-1                    # AWS S3 only
+```
+
+See **`specs/004-exam-upload-api/contracts/exams_post.md`** for the full API contract, error responses, and integration examples.
+
 #### Migration: Adding Exams and Artifacts Tables
 
 The `002_add_exams_and_artifacts_tables` migration adds exam and artifact tracking to the system with backward compatibility for existing tasks:

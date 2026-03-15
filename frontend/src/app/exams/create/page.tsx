@@ -13,13 +13,12 @@ import { AuthGuard } from '@/components/layout/AuthGuard';
 import { ExamMetadataForm } from '@/components/sections/ExamMetadataForm';
 import { useAuthStore } from '@/lib/state/auth-store';
 import { useTaskStore } from '@/lib/state/task-store';
-import { simulatePipeline } from '@/lib/simulation/pipeline';
-import type { ExamMetadata, TaskStatus } from '@/types';
+import { createExam } from '@/lib/api/exams';
+import type { ExamMetadata } from '@/types';
 
 export default function CreateExamPage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { createTask, updateTaskStatus, addTaskLog } = useTaskStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -27,6 +26,7 @@ export default function CreateExamPage() {
     academicYear: string;
     examName: string;
     subject: string;
+    gradeLevel?: string;
     duration: string;
     versions: string;
     notes?: string;
@@ -41,73 +41,57 @@ export default function CreateExamPage() {
     setIsSubmitting(true);
 
     try {
-      // Map form data to ExamMetadata (snake_case)
+      const file = data.files[0];
+      if (!file) {
+        throw new Error('No file uploaded');
+      }
+
+      // Read the Google ID token stored by the auth flow
+      const accessToken =
+        (typeof window !== 'undefined' && window.localStorage.getItem('access_token')) || '';
+
+      // Call the real backend API — maps form fields to API contract names
+      const result = await createExam(
+        {
+          name: data.examName,                             // examName → name
+          subject: data.subject,
+          academic_year: data.academicYear,
+          grade_level: data.gradeLevel || undefined,
+          duration_minutes: parseInt(data.duration, 10),
+          num_variants: parseInt(data.versions, 10),
+          instructions: data.notes || undefined,           // notes → instructions
+          file,
+        },
+        accessToken,
+      );
+
+      // Store task metadata locally for the task management UI
       const metadata: ExamMetadata = {
         academic_year: data.academicYear,
         exam_name: data.examName,
         subject: data.subject,
+        grade_level: data.gradeLevel,
         duration_minutes: parseInt(data.duration, 10),
         num_versions: parseInt(data.versions, 10),
         notes: data.notes,
       };
 
-      // Use first file for task
-      const file = data.files[0];
-      if (!file) {
-        throw new Error('No file uploaded');
-      }
-      
-      // Create task in store
-      const task = createTask(
-        metadata,
-        file.name,
-        file.size,
-        user.user_id
-      );
+      // Create local task entry using IDs returned by the backend
+      const { createTask, addTaskLog } = useTaskStore.getState();
+      const task = createTask(metadata, file.name, file.size, user.user_id);
+      addTaskLog(task.task_id, 'INFO', `Đã tạo bài thi (exam_id: ${result.exam_id}, task_id: ${result.task_id})`);
 
-      // Add initial log
-      addTaskLog(task.task_id, 'INFO', 'Đã tạo nhiệm vụ thành công');
-
-      // Show success notification
       setShowSuccess(true);
 
-      // Start pipeline simulation in background
-      simulatePipeline(
-        (status: TaskStatus) => {
-          updateTaskStatus(task.task_id, status, 0);
-          
-          // Add status change logs
-          const statusMessages: Record<TaskStatus, string> = {
-            pending: 'Nhiệm vụ đang chờ xử lý',
-            extracting: 'Bắt đầu trích xuất dữ liệu từ file Word',
-            understanding: 'Bắt đầu phân tích nội dung câu hỏi',
-            awaiting: 'Chờ xác nhận từ người dùng',
-            shuffling: 'Bắt đầu xáo trộn câu hỏi',
-            generating: 'Bắt đầu tạo file đề thi',
-            completed: 'Hoàn thành xử lý đề thi',
-            failed: 'Có lỗi xảy ra khi xử lý',
-          };
-          
-          addTaskLog(task.task_id, 'INFO', statusMessages[status]);
-        },
-        (progress: number) => {
-          // Get current task status to update with progress
-          const currentTask = useTaskStore.getState().getTaskById(task.task_id);
-          if (currentTask) {
-            updateTaskStatus(task.task_id, currentTask.status, progress);
-          }
-        },
-        () => {
-          // Callback when 'awaiting' status is reached - redirect to preview page
-          router.push(`/exams/preview/${task.task_id}`);
-        }
-      ).catch((error) => {
-        console.error('Pipeline simulation error:', error);
-        addTaskLog(task.task_id, 'ERROR', error.message || 'Có lỗi xảy ra');
-      });
+      // Redirect to task management after brief delay
+      setTimeout(() => {
+        router.push('/tasks');
+      }, 2000);
     } catch (error) {
-      console.error('Error creating task:', error);
-      alert('Có lỗi xảy ra khi tạo nhiệm vụ. Vui lòng thử lại.');
+      console.error('Error creating exam:', error);
+      const message =
+        error instanceof Error ? error.message : 'Có lỗi xảy ra khi tạo bài thi. Vui lòng thử lại.';
+      alert(message);
     } finally {
       setIsSubmitting(false);
     }

@@ -2,16 +2,16 @@
 /tasks endpoints: Task creation and management.
 """
 
+import uuid
+
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
-import uuid
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.models.user import User
 from app.schemas.task import TaskCreate, TaskResponse, TaskWithLogsResponse
 from app.services import task_service
-
 
 router = APIRouter()
 
@@ -44,17 +44,17 @@ async def create_task(
         exam_id=task_data.exam_id,
         simulate_failure_stage=task_data.simulate_failure_stage,
     )
-    
+
     # Enqueue Celery task for background processing
     # Import here to avoid circular dependency
     from app.tasks.process_task import process_task
-    
+
     # Pass task_id and simulate_failure_stage to worker
     process_task.delay(
         str(task.task_id),
         task_data.simulate_failure_stage.value if task_data.simulate_failure_stage else None
     )
-    
+
     return TaskResponse.model_validate(task)
 
 
@@ -87,7 +87,7 @@ async def get_task(
         user_id=current_user.user_id,
         log_limit=50
     )
-    
+
     return TaskWithLogsResponse.model_validate(task)
 
 
@@ -120,12 +120,12 @@ async def retry_task(
         task_id=task_id,
         user_id=current_user.user_id
     )
-    
+
     # Re-enqueue Celery task for background processing
     from app.tasks.process_task import process_task
-    
+
     # Pass task_id and None for simulate_failure_stage (retry should complete)
     process_task.delay(str(task.task_id), None)
-    
+
     return TaskResponse.model_validate(task)
 

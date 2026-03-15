@@ -6,8 +6,7 @@ Aggregates all v1 endpoints under /api/v1 prefix.
 
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import me, tasks, exams
-
+from app.api.v1.endpoints import exams, me, tasks
 
 # Create main v1 router
 api_router = APIRouter()

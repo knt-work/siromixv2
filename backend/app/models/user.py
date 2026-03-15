@@ -4,7 +4,8 @@ User model: Authenticated Google OAuth users.
 
 import uuid
 from datetime import datetime
-from sqlalchemy import String, DateTime
+
+from sqlalchemy import DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -23,16 +24,16 @@ class User(Base):
         created_at: Record creation timestamp
         updated_at: Last modification timestamp
     """
-    
+
     __tablename__ = "users"
-    
+
     # Primary key
     user_id: Mapped[uuid.UUID] = mapped_column(
         primary_key=True,
         default=uuid.uuid4,
         index=True
     )
-    
+
     # Google OAuth fields
     google_sub: Mapped[str] = mapped_column(
         String(255),
@@ -41,19 +42,19 @@ class User(Base):
         index=True,
         comment="Google's unique subject identifier"
     )
-    
+
     email: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
         comment="User's email address"
     )
-    
+
     display_name: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
         comment="User's display name"
     )
-    
+
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -61,7 +62,7 @@ class User(Base):
         server_default=func.now(),
         comment="Record creation time"
     )
-    
+
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -69,19 +70,19 @@ class User(Base):
         onupdate=func.now(),
         comment="Last update time"
     )
-    
+
     # Relationships
     tasks: Mapped[list["Task"]] = relationship(
         "Task",
         back_populates="user",
         cascade="all, delete-orphan"
     )
-    
+
     exams: Mapped[list["Exam"]] = relationship(
         "Exam",
         back_populates="user",
         cascade="all, delete-orphan"
     )
-    
+
     def __repr__(self) -> str:
         return f"<User(user_id={self.user_id}, email={self.email})>"

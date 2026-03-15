@@ -4,10 +4,11 @@ Artifact model: Tracks generated pipeline outputs.
 This model stores metadata for files produced during exam processing.
 """
 
-import uuid
 import enum
+import uuid
 from datetime import datetime
-from sqlalchemy import Integer, String, DateTime, ForeignKey, Enum, Index
+
+from sqlalchemy import DateTime, Enum, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -41,7 +42,7 @@ class Artifact(Base):
         created_at: Artifact creation timestamp
     """
     __tablename__ = "artifacts"
-    
+
     artifact_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     exam_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("exams.exam_id", ondelete="CASCADE"), nullable=False, index=True)
     task_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("tasks.task_id", ondelete="SET NULL"), nullable=True, index=True)
@@ -50,11 +51,11 @@ class Artifact(Base):
     file_path: Mapped[str] = mapped_column(String(500), nullable=False)
     mime_type: Mapped[str] = mapped_column(String(100), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now(), index=True)
-    
+
     # Relationships
     exam: Mapped["Exam"] = relationship("Exam", back_populates="artifacts")
     task: Mapped["Task"] = relationship("Task", back_populates="artifacts")
-    
+
     __table_args__ = (
         Index('ix_artifacts_exam_id_artifact_type', 'exam_id', 'artifact_type'),  # Composite index
     )

@@ -158,24 +158,24 @@
 
 ### Frontend Integration
 
-- [ ] T047 [P] Update ExamMetadataForm component in frontend/src/components/sections/ExamMetadataForm.tsx to add grade_level field (dropdown with common grade levels)
-- [ ] T048 [P] Update ExamMetadataForm component in frontend/src/components/sections/ExamMetadataForm.tsx to add duration field (number input for minutes)
-- [ ] T049 Update exam creation page in frontend/src/app/exams/create/page.tsx to map form fields to API contract (examName → name, notes → instructions, add gradeLevel and duration)
-- [ ] T050 [P] Update ExamMetadata type interface in frontend/src/types/index.ts to include gradeLevel and duration properties
-- [ ] T051 [P] Add frontend validation for duration field in frontend/src/components/sections/ExamMetadataForm.tsx (must be positive integer, reasonable range 15-300 minutes)
+- [X] T047 [P] Update ExamMetadataForm component in frontend/src/components/sections/ExamMetadataForm.tsx to add grade_level field (dropdown with common grade levels)
+- [X] T048 [P] Update ExamMetadataForm component in frontend/src/components/sections/ExamMetadataForm.tsx to add duration field (number input for minutes)
+- [X] T049 Update exam creation page in frontend/src/app/exams/create/page.tsx to map form fields to API contract (examName → name, notes → instructions, add gradeLevel and duration)
+- [X] T050 [P] Update ExamMetadata type interface in frontend/src/types/index.ts to include gradeLevel and duration properties
+- [X] T051 [P] Add frontend validation for duration field in frontend/src/components/sections/ExamMetadataForm.tsx (must be positive integer, reasonable range 15-300 minutes)
 
 ### Documentation & Validation
 
-- [ ] T052 [P] Update backend README in backend/README.md with Feature 004 endpoints and storage configuration
-- [ ] T053 [P] Run quickstart validation per specs/004-exam-upload-api/quickstart.md (verify migrations, test API endpoint, check storage upload, verify Celery task)
-- [ ] T054 [P] Generate OpenAPI spec and verify POST /api/v1/exams appears correctly in Swagger UI at http://localhost:8000/docs
+- [X] T052 [P] Update backend README in backend/README.md with Feature 004 endpoints and storage configuration
+- [X] T053 [P] Run quickstart validation per specs/004-exam-upload-api/quickstart.md (verify migrations, test API endpoint, check storage upload, verify Celery task)
+- [X] T054 [P] Generate OpenAPI spec and verify POST /api/v1/exams appears correctly in Swagger UI at http://localhost:8000/docs
 
 ### Code Quality
 
-- [ ] T055 [P] Run pytest with coverage for all new tests: `pytest --cov=app --cov-report=html`
-- [ ] T056 [P] Verify test coverage ≥ 80% for new modules (exam_service.py, storage.py, endpoints/exams.py)
-- [ ] T057 [P] Run linting on new code: `ruff check backend/app/` and fix any issues
-- [ ] T058 [P] Run type checking: `mypy backend/app/` and fix any type errors
+- [X] T055 [P] Run pytest with coverage for all new tests: `pytest --cov=app --cov-report=html`
+- [X] T056 [P] Verify test coverage ≥ 80% for new modules (exam_service.py, storage.py, endpoints/exams.py)
+- [X] T057 [P] Run linting on new code: `ruff check backend/app/` and fix any issues
+- [X] T058 [P] Run type checking: `mypy backend/app/` and fix any type errors
 
 ---
 

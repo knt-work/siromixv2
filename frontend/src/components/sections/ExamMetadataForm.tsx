@@ -23,6 +23,7 @@ const examMetadataSchema = z.object({
   academicYear: z.string().min(1, 'Vui lòng chọn năm học'),
   examName: z.string().min(1, 'Vui lòng nhập tên kì thi'),
   subject: z.string().min(1, 'Vui lòng nhập môn học'),
+  gradeLevel: z.string().max(100, 'Khối/lớp không được vượt quá 100 ký tự').optional(),
   duration: z.string().refine((val) => {
     const num = parseInt(val, 10);
     return !isNaN(num) && num > 0;
@@ -109,6 +110,22 @@ export const ExamMetadataForm: React.FC<ExamMetadataFormProps> = ({
               options={academicYearOptions}
               placeholder="Chọn năm học"
               hasError={!!errors.academicYear}
+              fullWidth
+            />
+          </FormField>
+
+          {/* Grade Level */}
+          <FormField
+            label="Khối/Lớp"
+            htmlFor="gradeLevel"
+            error={errors.gradeLevel?.message}
+            helperText="Khối hoặc lớp dự thi (không bắt buộc)"
+          >
+            <Input
+              id="gradeLevel"
+              {...register('gradeLevel')}
+              placeholder="VD: Khối 10, Lớp 11A"
+              hasError={!!errors.gradeLevel}
               fullWidth
             />
           </FormField>

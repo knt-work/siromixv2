@@ -4,17 +4,17 @@ Exam Pydantic schemas for API validation.
 This module defines validation schemas for exam creation, updates, and responses.
 """
 
-from pydantic import BaseModel, Field, ConfigDict, field_validator
 from datetime import datetime
 from uuid import UUID
-from typing import Optional
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models.exam import ExamStatus
 
 
 class ExamCreate(BaseModel):
     """Schema for creating a new exam."""
-    
+
     name: str = Field(
         ...,
         min_length=1,
@@ -22,7 +22,7 @@ class ExamCreate(BaseModel):
         description="Exam title/name",
         examples=["Mathematics Final Exam 2026", "AP Physics C - Mechanics"]
     )
-    
+
     subject: str = Field(
         ...,
         min_length=1,
@@ -30,7 +30,7 @@ class ExamCreate(BaseModel):
         description="Subject area",
         examples=["Mathematics", "Physics", "Chemistry"]
     )
-    
+
     academic_year: str = Field(
         ...,
         min_length=1,
@@ -38,14 +38,14 @@ class ExamCreate(BaseModel):
         description="Academic year or term",
         examples=["2025-2026", "Spring 2026", "Fall 2025"]
     )
-    
-    grade_level: Optional[str] = Field(
+
+    grade_level: str | None = Field(
         None,
         max_length=100,
         description="Optional grade or class level",
         examples=["Grade 10", "Grade 12 - Advanced Placement", "College Freshman"]
     )
-    
+
     num_variants: int = Field(
         ...,
         gt=0,
@@ -53,32 +53,32 @@ class ExamCreate(BaseModel):
         description="Number of exam variants to generate",
         examples=[3, 5, 10]
     )
-    
+
     duration_minutes: int = Field(
         ...,
         gt=0,
         description="Exam duration in minutes",
         examples=[45, 60, 90, 120]
     )
-    
-    instructions: Optional[str] = Field(
+
+    instructions: str | None = Field(
         None,
         description="Optional exam-level instructions",
         examples=["Use blue or black pen only.", "Show all work for partial credit."]
     )
-    
+
     @field_validator('name', 'subject', 'academic_year')
     @classmethod
     def strip_whitespace(cls, v: str) -> str:
         """Remove leading/trailing whitespace."""
         return v.strip()
-    
+
     @field_validator('grade_level', 'instructions')
     @classmethod
-    def strip_optional_whitespace(cls, v: Optional[str]) -> Optional[str]:
+    def strip_optional_whitespace(cls, v: str | None) -> str | None:
         """Remove leading/trailing whitespace from optional fields."""
         return v.strip() if v else None
-    
+
     @field_validator('name')
     @classmethod
     def validate_name_length(cls, v: str) -> str:
@@ -88,7 +88,7 @@ class ExamCreate(BaseModel):
         if len(v) == 0:
             raise ValueError("Field required")
         return v
-    
+
     @field_validator('subject')
     @classmethod
     def validate_subject_length(cls, v: str) -> str:
@@ -98,7 +98,7 @@ class ExamCreate(BaseModel):
         if len(v) == 0:
             raise ValueError("Field required")
         return v
-    
+
     @field_validator('academic_year')
     @classmethod
     def validate_academic_year_length(cls, v: str) -> str:
@@ -108,15 +108,15 @@ class ExamCreate(BaseModel):
         if len(v) == 0:
             raise ValueError("Field required")
         return v
-    
+
     @field_validator('grade_level')
     @classmethod
-    def validate_grade_level_length(cls, v: Optional[str]) -> Optional[str]:
+    def validate_grade_level_length(cls, v: str | None) -> str | None:
         """Validate grade_level field length with custom error message."""
         if v and len(v) > 100:
             raise ValueError("String should have at most 100 characters")
         return v
-    
+
     @field_validator('num_variants')
     @classmethod
     def validate_num_variants_positive(cls, v: int) -> int:
@@ -124,7 +124,7 @@ class ExamCreate(BaseModel):
         if v <= 0:
             raise ValueError("Input should be greater than 0")
         return v
-    
+
     @field_validator('duration_minutes')
     @classmethod
     def validate_duration_positive(cls, v: int) -> int:
@@ -132,7 +132,7 @@ class ExamCreate(BaseModel):
         if v <= 0:
             raise ValueError("Input should be greater than 0")
         return v
-    
+
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [
@@ -152,49 +152,49 @@ class ExamCreate(BaseModel):
 
 class ExamUpdate(BaseModel):
     """Schema for updating an existing exam."""
-    
-    name: Optional[str] = Field(
+
+    name: str | None = Field(
         None,
         min_length=1,
         max_length=500
     )
-    
-    subject: Optional[str] = Field(
+
+    subject: str | None = Field(
         None,
         min_length=1,
         max_length=500
     )
-    
-    academic_year: Optional[str] = Field(
+
+    academic_year: str | None = Field(
         None,
         min_length=1,
         max_length=50
     )
-    
-    grade_level: Optional[str] = Field(
+
+    grade_level: str | None = Field(
         None,
         max_length=100
     )
-    
-    num_variants: Optional[int] = Field(
+
+    num_variants: int | None = Field(
         None,
         gt=0,
         le=100
     )
-    
-    duration_minutes: Optional[int] = Field(
+
+    duration_minutes: int | None = Field(
         None,
         gt=0,
         description="Exam duration in minutes"
     )
-    
-    instructions: Optional[str] = None
-    
-    status: Optional[ExamStatus] = Field(
+
+    instructions: str | None = None
+
+    status: ExamStatus | None = Field(
         None,
         description="Update exam status"
     )
-    
+
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [
@@ -212,20 +212,20 @@ class ExamUpdate(BaseModel):
 
 class ExamResponse(BaseModel):
     """Schema for exam API responses."""
-    
+
     exam_id: UUID = Field(..., description="Unique exam identifier")
     user_id: UUID = Field(..., description="Owning user ID")
     name: str
     subject: str
     academic_year: str
-    grade_level: Optional[str] = None
+    grade_level: str | None = None
     num_variants: int
     duration_minutes: int
-    instructions: Optional[str] = None
+    instructions: str | None = None
     status: ExamStatus
     created_at: datetime = Field(..., description="UTC creation timestamp")
     updated_at: datetime = Field(..., description="UTC last update timestamp")
-    
+
     model_config = ConfigDict(
         from_attributes=True,  # Allow ORM model conversion
         json_schema_extra={
@@ -251,12 +251,12 @@ class ExamResponse(BaseModel):
 
 class ExamListResponse(BaseModel):
     """Schema for paginated exam list responses."""
-    
+
     items: list[ExamResponse] = Field(..., description="List of exams")
     total: int = Field(..., description="Total count across all pages", ge=0)
     page: int = Field(..., description="Current page number", ge=1)
     page_size: int = Field(..., description="Items per page", ge=1, le=100)
-    
+
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [

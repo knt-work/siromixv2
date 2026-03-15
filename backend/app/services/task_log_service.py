@@ -2,21 +2,22 @@
 Task log service: Business logic for task log management.
 """
 
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from typing import Optional, Dict, Any
 import uuid
+from typing import Any
 
-from app.models.task_log import TaskLog, LogLevel
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.task_log import LogLevel, TaskLog
 
 
 async def create_log(
     db: AsyncSession,
     task_id: uuid.UUID,
-    stage: Optional[str],
+    stage: str | None,
     level: LogLevel,
     message: str,
-    data_json: Optional[Dict[str, Any]] = None,
+    data_json: dict[str, Any] | None = None,
 ) -> TaskLog:
     """
     Create a structured log entry for a task.
@@ -39,11 +40,11 @@ async def create_log(
         message=message,
         data_json=data_json,
     )
-    
+
     db.add(log)
     await db.commit()
     await db.refresh(log)
-    
+
     return log
 
 
@@ -100,10 +101,10 @@ async def get_recent_logs(
         .limit(count)
     )
     logs = list(result.scalars().all())
-    
+
     # Reverse to return in ascending order (oldest first)
     logs.reverse()
-    
+
     return logs
 
 

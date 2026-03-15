@@ -18,8 +18,9 @@ export interface ExamMetadata {
   academic_year: string;         // e.g., "2024-2025"
   exam_name: string;             // e.g., "Midterm Exam"
   subject: string;               // e.g., "Mathematics"
+  grade_level?: string;          // e.g., "Khối 10" (optional)
   duration_minutes: number;      // Exam duration (> 0)
-  num_versions: number;          // Number of versions (1-10)
+  num_versions: number;          // Number of versions (1-100)
   notes?: string;                // Optional professor notes
 }
 

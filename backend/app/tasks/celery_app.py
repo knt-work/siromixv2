@@ -5,13 +5,13 @@ Celery is used to execute long-running tasks (pipeline stages) in the background
 Tasks are queued in Redis and processed by worker processes.
 """
 
-from celery import Celery
-from celery.signals import worker_shutdown
+import logging
 import os
 import signal
 import sys
-import logging
 
+from celery import Celery
+from celery.signals import worker_shutdown
 
 logger = logging.getLogger(__name__)
 
@@ -37,20 +37,20 @@ celery_app.conf.update(
     result_serializer="json",
     timezone="UTC",
     enable_utc=True,
-    
+
     # Task routing
     task_routes={
         "app.tasks.pipeline.*": {"queue": "pipeline"},
     },
-    
+
     # Task execution
     task_acks_late=True,  # Acknowledge after task completes, not when starting
     task_reject_on_worker_lost=True,  # Retry if worker dies
-    
+
     # Result backend
     result_expires=3600,  # Results expire after 1 hour
     result_extended=True,  # Store additional metadata
-    
+
     # Worker settings
     worker_prefetch_multiplier=1,  # Process one task at a time per worker
     worker_max_tasks_per_child=1000,  # Restart worker after 1000 tasks (prevent memory leaks)
@@ -90,7 +90,7 @@ def graceful_shutdown_signal_handler(signum, frame):
     signal_name = "SIGTERM" if signum == signal.SIGTERM else "SIGINT"
     logger.info(f"Received {signal_name}. Initiating graceful shutdown...")
     logger.info("Worker will finish current task before exiting.")
-    
+
     # Let Celery handle the actual shutdown
     # The worker_shutdown signal will be triggered
     sys.exit(0)

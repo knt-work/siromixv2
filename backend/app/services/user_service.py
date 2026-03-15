@@ -2,9 +2,9 @@
 User service: Business logic for user management.
 """
 
-from sqlalchemy.ext.asyncio import AsyncSession
+
 from sqlalchemy import select
-from typing import Optional
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
 
@@ -13,7 +13,7 @@ async def get_or_create_user(
     db: AsyncSession,
     google_sub: str,
     email: str,
-    display_name: Optional[str] = None,
+    display_name: str | None = None,
 ) -> User:
     """
     Get existing user by google_sub or create new user.
@@ -36,7 +36,7 @@ async def get_or_create_user(
         select(User).where(User.google_sub == google_sub)
     )
     user = result.scalar_one_or_none()
-    
+
     if user:
         # Update email and display name (may have changed in Google account)
         user.email = email
@@ -45,7 +45,7 @@ async def get_or_create_user(
         await db.commit()
         await db.refresh(user)
         return user
-    
+
     # Create new user
     user = User(
         google_sub=google_sub,
@@ -55,14 +55,14 @@ async def get_or_create_user(
     db.add(user)
     await db.commit()
     await db.refresh(user)
-    
+
     return user
 
 
 async def get_user_by_id(
     db: AsyncSession,
     user_id: str,
-) -> Optional[User]:
+) -> User | None:
     """
     Get user by user_id.
     

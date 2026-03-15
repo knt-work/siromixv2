@@ -8,19 +8,18 @@ This module implements the main task orchestration logic that:
 - Implements error handling and failure recovery (T051)
 """
 
-from celery.utils.log import get_task_logger
-import uuid
 import asyncio
-from typing import Optional
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 import os
+import uuid
 
-from app.tasks.celery_app import celery_app
-from app.models.task import TaskStatus, TaskStage
+from celery.utils.log import get_task_logger
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+from app.models.task import TaskStage, TaskStatus
 from app.models.task_log import LogLevel
-from app.services import task_service, task_log_service
+from app.services import task_log_service, task_service
 from app.tasks import pipeline_stages
-
+from app.tasks.celery_app import celery_app
 
 # Celery logger
 logger = get_task_logger(__name__)
@@ -40,7 +39,7 @@ def get_async_session_factory():
         "DATABASE_URL",
         "postgresql+asyncpg://siromix:siromix_dev_password@localhost:5432/siromix_v2"
     )
-    
+
     engine = create_async_engine(
         DATABASE_URL,
         echo=False,
@@ -48,7 +47,7 @@ def get_async_session_factory():
         pool_size=5,
         max_overflow=10,
     )
-    
+
     session_factory = async_sessionmaker(
         engine,
         class_=AsyncSession,
@@ -56,12 +55,12 @@ def get_async_session_factory():
         autocommit=False,
         autoflush=False,
     )
-    
+
     return session_factory, engine
 
 
 @celery_app.task(bind=True, name="process_task")
-def process_task(self, task_id_str: str, simulate_failure_stage: Optional[str] = None):
+def process_task(self, task_id_str: str, simulate_failure_stage: str | None = None):
     """
     Process a task through all pipeline stages.
     
@@ -80,7 +79,7 @@ def process_task(self, task_id_str: str, simulate_failure_stage: Optional[str] =
     return asyncio.run(_process_task_async(task_id_str, simulate_failure_stage))
 
 
-async def _process_task_async(task_id_str: str, simulate_failure_stage: Optional[str] = None):
+async def _process_task_async(task_id_str: str, simulate_failure_stage: str | None = None):
     """
     Async implementation of task processing.
     
@@ -89,10 +88,10 @@ async def _process_task_async(task_id_str: str, simulate_failure_stage: Optional
         simulate_failure_stage: Stage name to simulate failure at (for testing)
     """
     task_id = uuid.UUID(task_id_str)
-    
+
     # Create a new session factory for this event loop
     AsyncSessionLocal, engine = get_async_session_factory()
-    
+
     try:
         # Create database session
         async with AsyncSessionLocal() as db:
@@ -102,10 +101,10 @@ async def _process_task_async(task_id_str: str, simulate_failure_stage: Optional
                 if not task:
                     logger.error(f"Task {task_id} not found")
                     return {"status": "error", "message": "Task not found"}
-                
+
                 task.status = TaskStatus.RUNNING
                 await db.commit()
-                
+
                 # T049: Log task start
                 await task_log_service.create_log(
                     db=db,
@@ -115,7 +114,7 @@ async def _process_task_async(task_id_str: str, simulate_failure_stage: Optional
                     message="Task processing started",
                     data_json={"celery_task_id": str(task_id)}
                 )
-                
+
                 # Define pipeline stages with progress increments
                 stages = [
                     (TaskStage.EXTRACT_DOCX, pipeline_stages.extract_docx, 20),
@@ -124,7 +123,7 @@ async def _process_task_async(task_id_str: str, simulate_failure_stage: Optional
                     (TaskStage.SHUFFLE, pipeline_stages.shuffle, 80),
                     (TaskStage.RENDER_DOCX, pipeline_stages.render_docx, 100),
                 ]
-                
+
                 # T063: Determine starting point for retry
                 # If task has current_stage, it's a retry - resume from that stage
                 start_index = 0
@@ -133,7 +132,7 @@ async def _process_task_async(task_id_str: str, simulate_failure_stage: Optional
                     stage_names = [s[0] for s in stages]
                     if task.current_stage in stage_names:
                         start_index = stage_names.index(task.current_stage)
-                        
+
                         # Log retry resume
                         await task_log_service.create_log(
                             db=db,
@@ -145,15 +144,15 @@ async def _process_task_async(task_id_str: str, simulate_failure_stage: Optional
                                 "retry_count": task.retry_count_by_stage.get(task.current_stage.value, 0)
                             }
                         )
-                
+
                 # Process each stage starting from start_index
                 for stage_enum, stage_func, target_progress in stages[start_index:]:
                     stage_name = stage_enum.value
-                    
+
                     # Update current stage
                     task.current_stage = stage_enum
                     await db.commit()
-                    
+
                     # T049: Log stage start
                     await task_log_service.create_log(
                         db=db,
@@ -163,21 +162,21 @@ async def _process_task_async(task_id_str: str, simulate_failure_stage: Optional
                         message=f"Starting {stage_name}",
                         data_json=None
                     )
-                    
+
                     try:
                         # Check if we should simulate failure at this stage
                         should_fail = (simulate_failure_stage == stage_name)
-                        
+
                         # Execute stage
                         result = await stage_func(
                             task_id=task_id_str,
                             simulate_failure=should_fail
                         )
-                        
+
                         # Update progress
                         task.progress = target_progress
                         await db.commit()
-                        
+
                         # T049: Log stage completion
                         await task_log_service.create_log(
                             db=db,
@@ -187,7 +186,7 @@ async def _process_task_async(task_id_str: str, simulate_failure_stage: Optional
                             message=f"Completed {stage_name}",
                             data_json=result
                         )
-                        
+
                         # Initialize retry count for this stage if not exists
                         if stage_name not in task.retry_count_by_stage:
                             task.retry_count_by_stage[stage_name] = 0
@@ -195,12 +194,12 @@ async def _process_task_async(task_id_str: str, simulate_failure_stage: Optional
                             from sqlalchemy.orm import attributes
                             attributes.flag_modified(task, "retry_count_by_stage")
                             await db.commit()
-                    
+
                     except Exception as stage_error:
                         # T051: Error handling - log error and fail task
                         error_message = f"Error in {stage_name}: {str(stage_error)}"
                         logger.error(error_message)
-                        
+
                         # Log error
                         await task_log_service.create_log(
                             db=db,
@@ -213,24 +212,24 @@ async def _process_task_async(task_id_str: str, simulate_failure_stage: Optional
                                 "exception_message": str(stage_error),
                             }
                         )
-                        
+
                         # Update task to failed status
                         task.status = TaskStatus.FAILED
                         task.error = error_message
                         await db.commit()
-                        
+
                         return {
                             "status": "failed",
                             "stage": stage_name,
                             "error": error_message
                         }
-                
+
                 # All stages completed successfully
                 task.status = TaskStatus.COMPLETED
                 task.current_stage = TaskStage.RENDER_DOCX  # Last stage
                 task.progress = 100
                 await db.commit()
-                
+
                 # T049: Log task completion
                 await task_log_service.create_log(
                     db=db,
@@ -240,17 +239,17 @@ async def _process_task_async(task_id_str: str, simulate_failure_stage: Optional
                     message="Task processing completed successfully",
                     data_json={"final_progress": 100}
                 )
-                
+
                 return {
                     "status": "completed",
                     "task_id": task_id_str,
                     "progress": 100
                 }
-            
+
             except Exception as e:
                 # T051: Handle unexpected errors
                 logger.exception(f"Unexpected error processing task {task_id}")
-                
+
                 try:
                     # Try to log the error and update task status
                     await task_log_service.create_log(
@@ -264,7 +263,7 @@ async def _process_task_async(task_id_str: str, simulate_failure_stage: Optional
                             "exception_message": str(e),
                         }
                     )
-                    
+
                     task = await task_service.get_task_by_id(db, task_id)
                     if task:
                         task.status = TaskStatus.FAILED
@@ -272,7 +271,7 @@ async def _process_task_async(task_id_str: str, simulate_failure_stage: Optional
                         await db.commit()
                 except Exception as log_error:
                     logger.error(f"Failed to log error: {log_error}")
-                
+
                 return {
                     "status": "error",
                     "error": str(e)

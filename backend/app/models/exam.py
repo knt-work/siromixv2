@@ -4,10 +4,11 @@ Exam model: Business metadata for exam creation and tracking.
 This model stores exam-level information and serves as the parent for artifacts.
 """
 
-import uuid
 import enum
+import uuid
 from datetime import datetime
-from sqlalchemy import Integer, String, Text, DateTime, ForeignKey, Enum, CheckConstraint
+
+from sqlalchemy import CheckConstraint, DateTime, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -44,7 +45,7 @@ class Exam(Base):
         updated_at: Last modification timestamp
     """
     __tablename__ = "exams"
-    
+
     exam_id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4, index=True)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(500), nullable=False)
@@ -57,12 +58,12 @@ class Exam(Base):
     status: Mapped[ExamStatus] = mapped_column(Enum(ExamStatus, native_enum=False), nullable=False, default=ExamStatus.DRAFT, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now(), index=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
-    
+
     # Relationships
     user: Mapped["User"] = relationship("User", back_populates="exams")
     tasks: Mapped[list["Task"]] = relationship("Task", back_populates="exam", cascade="all, delete-orphan")
     artifacts: Mapped[list["Artifact"]] = relationship("Artifact", back_populates="exam", cascade="all, delete-orphan")
-    
+
     __table_args__ = (
         CheckConstraint("num_variants > 0", name="check_num_variants_positive"),
         CheckConstraint("duration_minutes > 0", name="check_duration_minutes_positive"),

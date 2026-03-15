@@ -2,13 +2,14 @@
 Task model: Asynchronous processing jobs through pipeline stages.
 """
 
-import uuid
 import enum
+import uuid
 from datetime import datetime
-from sqlalchemy import Integer, Text, DateTime, ForeignKey, Enum, CheckConstraint, JSON
+
+from sqlalchemy import JSON, CheckConstraint, DateTime, Enum, ForeignKey, Integer, Text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
-from sqlalchemy.dialects.postgresql import JSONB
 
 from app.core.database import Base
 
@@ -48,16 +49,16 @@ class Task(Base):
         created_at: Record creation timestamp
         updated_at: Last modification timestamp
     """
-    
+
     __tablename__ = "tasks"
-    
+
     # Primary key
     task_id: Mapped[uuid.UUID] = mapped_column(
         primary_key=True,
         default=uuid.uuid4,
         index=True
     )
-    
+
     # Foreign key to user
     user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.user_id", ondelete="CASCADE"),
@@ -65,7 +66,7 @@ class Task(Base):
         index=True,
         comment="Owner of the task"
     )
-    
+
     # Foreign key to exam (required)
     exam_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("exams.exam_id", ondelete="CASCADE"),
@@ -73,7 +74,7 @@ class Task(Base):
         index=True,
         comment="Associated exam"
     )
-    
+
     # Task status
     status: Mapped[TaskStatus] = mapped_column(
         Enum(TaskStatus, name="task_status", native_enum=False),
@@ -82,13 +83,13 @@ class Task(Base):
         default=TaskStatus.QUEUED,
         comment="Current task status"
     )
-    
+
     current_stage: Mapped[TaskStage | None] = mapped_column(
         Enum(TaskStage, name="task_stage", native_enum=False),
         nullable=True,
         comment="Current pipeline stage"
     )
-    
+
     # Progress tracking
     progress: Mapped[int] = mapped_column(
         Integer,
@@ -96,7 +97,7 @@ class Task(Base):
         default=0,
         comment="Completion percentage (0-100)"
     )
-    
+
     # Retry metadata
     retry_count_by_stage: Mapped[dict] = mapped_column(
         JSON().with_variant(JSONB, "postgresql"),
@@ -105,14 +106,14 @@ class Task(Base):
         server_default="{}",
         comment="Map of stage name to retry count"
     )
-    
+
     # Error tracking
     error: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         comment="Error message if failed"
     )
-    
+
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -121,7 +122,7 @@ class Task(Base):
         index=True,
         comment="Record creation time"
     )
-    
+
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -129,34 +130,34 @@ class Task(Base):
         onupdate=func.now(),
         comment="Last update time"
     )
-    
+
     # Relationships
     user: Mapped["User"] = relationship(
         "User",
         back_populates="tasks"
     )
-    
+
     exam: Mapped["Exam"] = relationship(
         "Exam",
         back_populates="tasks"
     )
-    
+
     logs: Mapped[list["TaskLog"]] = relationship(
         "TaskLog",
         back_populates="task",
         cascade="all, delete-orphan",
         order_by="TaskLog.timestamp"
     )
-    
+
     artifacts: Mapped[list["Artifact"]] = relationship(
         "Artifact",
         back_populates="task"
     )
-    
+
     # Constraints
     __table_args__ = (
         CheckConstraint("progress >= 0 AND progress <= 100", name="progress_range"),
     )
-    
+
     def __repr__(self) -> str:
         return f"<Task(task_id={self.task_id}, status={self.status.value}, progress={self.progress}%)>"

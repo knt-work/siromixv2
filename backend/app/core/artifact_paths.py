@@ -39,29 +39,29 @@ def to_kebab_case(text: str, max_length: int = 100) -> str:
     # Normalize unicode (remove accents: café → cafe)
     text = unicodedata.normalize('NFKD', text)
     text = text.encode('ascii', 'ignore').decode('ascii')
-    
+
     # Lowercase
     text = text.lower()
-    
+
     # Replace non-alphanumeric with hyphens
     text = re.sub(r'[^a-z0-9]+', '-', text)
-    
+
     # Remove leading/trailing hyphens
     text = text.strip('-')
-    
+
     # Collapse multiple hyphens
     text = re.sub(r'-+', '-', text)
-    
+
     # Truncate to max length at word boundary
     if len(text) > max_length:
         text = text[:max_length].rsplit('-', 1)[0]
-    
+
     return text or 'untitled'  # Fallback for empty result
 
 
 def generate_artifact_path(
-    user_id: UUID, 
-    exam_name: str, 
+    user_id: UUID,
+    exam_name: str,
     filename: str
 ) -> str:
     """

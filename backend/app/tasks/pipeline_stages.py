@@ -7,13 +7,13 @@ Future versions will implement actual DOCX parsing and AI-powered transformation
 
 import asyncio
 import random
-from typing import Dict, Any
+from typing import Any
 
 
 async def extract_docx(
     task_id: str,
     simulate_failure: bool = False
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Mock stage 1: Extract document structure from DOCX.
     
@@ -33,10 +33,10 @@ async def extract_docx(
     # Simulate processing time (3-5 seconds)
     delay = random.uniform(3.0, 5.0)
     await asyncio.sleep(delay)
-    
+
     if simulate_failure:
         raise Exception("Simulated failure in extract_docx stage")
-    
+
     # Mock extraction result
     return {
         "blocks_extracted": 0,  # MVP: no actual extraction
@@ -49,7 +49,7 @@ async def extract_docx(
 async def ai_understanding(
     task_id: str,
     simulate_failure: bool = False
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Mock stage 2: Map extracted content to canonical schema using AI.
     
@@ -68,10 +68,10 @@ async def ai_understanding(
     """
     delay = random.uniform(3.0, 5.0)
     await asyncio.sleep(delay)
-    
+
     if simulate_failure:
         raise Exception("Simulated failure in ai_understanding stage")
-    
+
     return {
         "questions_mapped": 0,  # MVP: no actual mapping
         "confidence_score": round(random.uniform(0.85, 0.98), 2),
@@ -84,7 +84,7 @@ async def ai_understanding(
 async def ai_analysis(
     task_id: str,
     simulate_failure: bool = False
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Mock stage 3: Add metadata and quality checks using AI.
     
@@ -103,10 +103,10 @@ async def ai_analysis(
     """
     delay = random.uniform(3.0, 5.0)
     await asyncio.sleep(delay)
-    
+
     if simulate_failure:
         raise Exception("Simulated failure in ai_analysis stage")
-    
+
     return {
         "quality_score": round(random.uniform(0.75, 0.95), 2),
         "issues_found": 0,  # MVP: no actual analysis
@@ -119,7 +119,7 @@ async def ai_analysis(
 async def shuffle(
     task_id: str,
     simulate_failure: bool = False
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Mock stage 4: Generate exam variants by shuffling questions/options.
     
@@ -138,10 +138,10 @@ async def shuffle(
     """
     delay = random.uniform(3.0, 5.0)
     await asyncio.sleep(delay)
-    
+
     if simulate_failure:
         raise Exception("Simulated failure in shuffle stage")
-    
+
     return {
         "variants_generated": 0,  # MVP: no actual variants
         "shuffle_seed": random.randint(1000, 9999),
@@ -154,7 +154,7 @@ async def shuffle(
 async def render_docx(
     task_id: str,
     simulate_failure: bool = False
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Mock stage 5: Export final documents as DOCX files.
     
@@ -173,10 +173,10 @@ async def render_docx(
     """
     delay = random.uniform(3.0, 5.0)
     await asyncio.sleep(delay)
-    
+
     if simulate_failure:
         raise Exception("Simulated failure in render_docx stage")
-    
+
     return {
         "files_created": 0,  # MVP: no actual files
         "total_pages": 0,

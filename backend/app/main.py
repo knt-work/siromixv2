@@ -5,24 +5,25 @@ MVP Foundation: Google OAuth authentication, task workflow framework,
 mock pipeline execution with progress tracking and retry mechanisms.
 """
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
 import os
 import subprocess
+from contextlib import asynccontextmanager
 from pathlib import Path
+
 from dotenv import load_dotenv
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 # Load environment variables from .env file
 env_path = Path(__file__).parent.parent / '.env'
 load_dotenv(dotenv_path=env_path)
 
-from app.core.database import close_db, AsyncSessionLocal
-from app.core.middleware import ErrorHandlingMiddleware, RequestLoggingMiddleware
-from app.api.v1.api import api_router
-from app.tasks.celery_app import celery_app
 from sqlalchemy import text
 
+from app.api.v1.api import api_router
+from app.core.database import AsyncSessionLocal, close_db
+from app.core.middleware import ErrorHandlingMiddleware, RequestLoggingMiddleware
+from app.tasks.celery_app import celery_app
 
 # Application metadata
 APP_VERSION = "0.1.0"
@@ -71,7 +72,7 @@ async def lifespan(app: FastAPI):
     """
     # Startup
     print("[*] Starting SiroMix V2 API...")
-    
+
     # Run database migrations automatically (T095: Quickstart validation)
     try:
         print("[*] Running database migrations...")
@@ -90,13 +91,13 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"[!] Could not run migrations automatically: {e}")
         print("[!] Run manually: alembic upgrade head")
-    
+
     print("[+] Database models loaded")
     print("[+] Phase 2: Foundational infrastructure ready")
     print("[+] Phase 3: OAuth authentication endpoints active")
-    
+
     yield
-    
+
     # Shutdown
     print("[*] Shutting down SiroMix V2 API...")
     await close_db()
@@ -117,9 +118,10 @@ app = FastAPI(
 
 # Custom exception handler to convert Pydantic validation errors (422) to 400 Bad Request
 # This ensures the API contract is consistent - all validation errors return 400
+from fastapi import status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from fastapi import status
+
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc: RequestValidationError):
@@ -184,7 +186,7 @@ async def health_check():
     """
     from fastapi import status as http_status
     from fastapi.responses import JSONResponse
-    
+
     health_status = {
         "status": "healthy",
         "service": "siromix-backend",
@@ -194,7 +196,7 @@ async def health_check():
             "redis": "unknown",
         }
     }
-    
+
     # Check database connectivity
     try:
         async with AsyncSessionLocal() as session:
@@ -203,7 +205,7 @@ async def health_check():
     except Exception as e:
         health_status["checks"]["database"] = f"error: {str(e)[:50]}"
         health_status["status"] = "unhealthy"
-    
+
     # Check Redis connectivity via Celery
     try:
         # Celery inspect with timeout to avoid hanging
@@ -217,14 +219,14 @@ async def health_check():
     except Exception as e:
         health_status["checks"]["redis"] = f"error: {str(e)[:50]}"
         health_status["status"] = "unhealthy"
-    
+
     # Return 503 if unhealthy
     if health_status["status"] == "unhealthy":
         return JSONResponse(
             status_code=http_status.HTTP_503_SERVICE_UNAVAILABLE,
             content=health_status
         )
-    
+
     return health_status
 
 
@@ -234,7 +236,7 @@ app.include_router(api_router, prefix="/api/v1")
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     uvicorn.run(
         "backend.app.main:app",
         host="0.0.0.0",

@@ -4,23 +4,22 @@ FastAPI dependencies for request handling.
 Provides dependency injection for authentication, database sessions, etc.
 """
 
-from fastapi import Depends, HTTPException, status, Header
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Optional
 import logging
 
+from fastapi import Depends, Header, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.auth import GoogleTokenError, extract_bearer_token, verify_google_token
 from app.core.database import get_db
-from app.core.auth import verify_google_token, extract_bearer_token, GoogleTokenError
 from app.core.storage import StorageClient
 from app.models.user import User
 from app.services.user_service import get_or_create_user
-
 
 logger = logging.getLogger(__name__)
 
 
 async def get_current_user(
-    authorization: Optional[str] = Header(None),
+    authorization: str | None = Header(None),
     db: AsyncSession = Depends(get_db),
 ) -> User:
     """
@@ -45,19 +44,19 @@ async def get_current_user(
             return {"user_id": user.user_id}
     """
     logger.debug(f"Authorization header: {authorization}")
-    
+
     # Extract token from header
     token = extract_bearer_token(authorization)
-    
+
     logger.debug(f"Extracted token: {token[:50] if token else None}...")
-    
+
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing or invalid Authorization header",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     # Verify Google token
     try:
         user_info = await verify_google_token(token)
@@ -69,7 +68,7 @@ async def get_current_user(
             detail=f"Invalid token: {str(e)}",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     # Get or create user
     user = await get_or_create_user(
         db=db,
@@ -77,14 +76,14 @@ async def get_current_user(
         email=user_info['email'],
         display_name=user_info.get('display_name'),
     )
-    
+
     return user
 
 
 async def get_current_user_optional(
-    authorization: Optional[str] = Header(None),
+    authorization: str | None = Header(None),
     db: AsyncSession = Depends(get_db),
-) -> Optional[User]:
+) -> User | None:
     """
     Optional authentication dependency.
     

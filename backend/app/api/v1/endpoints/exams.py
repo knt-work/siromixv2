@@ -4,17 +4,16 @@
 Feature 004: File Upload & Exam Creation API
 """
 
-from fastapi import APIRouter, Depends, status, UploadFile, File, Form, HTTPException
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
-import uuid
 
 from app.core.database import get_db
 from app.core.deps import get_current_user, get_storage_client
-from app.models.user import User
-from app.schemas.exam import ExamCreate, ExamResponse
-from app.services.exam_service import ExamService
 from app.core.storage import StorageClient
-
+from app.models.user import User
+from app.schemas.exam import ExamCreate
+from app.services.exam_service import ExamService
 
 router = APIRouter()
 
@@ -23,7 +22,7 @@ router = APIRouter()
 async def create_exam(
     # File upload
     file: UploadFile = File(..., description="DOCX exam document (≤50MB)"),
-    
+
     # Form fields (Pydantic model cannot be used directly with multipart/form-data)
     name: str = Form(..., max_length=500, description="Exam name/title"),
     subject: str = Form(..., max_length=500, description="Subject area"),
@@ -32,7 +31,7 @@ async def create_exam(
     duration_minutes: int = Form(..., gt=0, description="Exam duration in minutes"),
     num_variants: int = Form(..., gt=0, description="Number of exam variants to generate"),
     instructions: str = Form(None, description="Exam-level instructions"),
-    
+
     # Dependencies
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -40,10 +39,10 @@ async def create_exam(
 ):
     """
     Create new exam with file upload.
-    
+
     Accepts multipart/form-data with exam metadata and DOCX file.
     Returns exam_id, task_id, and queued status upon successful creation.
-    
+
     Workflow:
     1. Validate file format and size
     2. Upload file to object storage (MinIO/S3)
@@ -51,7 +50,7 @@ async def create_exam(
     4. Create Task record (status="QUEUED") with required exam_id
     5. Enqueue Celery task for pipeline processing
     6. Return IDs for tracking
-    
+
     Args:
         file: Uploaded DOCX exam document (max 50MB)
         name: Exam name (1-500 characters)
@@ -64,13 +63,13 @@ async def create_exam(
         current_user: Authenticated user from JWT token
         db: Database session
         storage_client: Object storage client
-    
+
     Returns:
         JSON response with:
         - exam_id (UUID): Unique identifier for created exam
         - task_id (UUID): Unique identifier for processing task
         - status (str): Task status (always "queued" for new submissions)
-    
+
     Raises:
         400: Validation error (missing fields, invalid values, wrong file format)
         401: Authentication required (missing or invalid JWT token)
@@ -79,7 +78,7 @@ async def create_exam(
         500: Internal server error (database failure)
         503: Storage service unavailable
         507: Storage quota exceeded
-    
+
     Example:
         ```bash
         curl -X POST http://localhost:8000/api/v1/exams \\
@@ -100,22 +99,22 @@ async def create_exam(
             status_code=400,
             detail="File upload is required"
         )
-    
+
     # Read file to determine size (needed for validation)
     file_content = await file.read()
     file.size = len(file_content)  # Set size attribute for validation
-    
+
     # Reset file pointer for validation and service consumption
     await file.seek(0)
-    
+
     # Validate file using centralized validation logic (Phase 4)
     # Create temporary service instance for validation
     temp_service = ExamService(db=db, storage_client=storage_client)
     temp_service.validate_docx_file(file)
-    
+
     # Reset file pointer again after validation
     await file.seek(0)
-    
+
     # Create ExamCreate Pydantic model from form fields
     exam_data = ExamCreate(
         name=name,
@@ -126,16 +125,16 @@ async def create_exam(
         duration_minutes=duration_minutes,
         instructions=instructions
     )
-    
+
     # Call service layer to handle business logic
     exam_service = ExamService(db=db, storage_client=storage_client)
-    
+
     exam_id, task_id, task_status = await exam_service.create_exam_with_upload(
         exam_data=exam_data,
         file=file,
         user_id=current_user.user_id
     )
-    
+
     # Return response per API contract
     return {
         "exam_id": str(exam_id),

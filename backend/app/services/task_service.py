@@ -2,21 +2,21 @@
 Task service: Business logic for task management.
 """
 
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
-from typing import Optional
 import uuid
-from fastapi import HTTPException
 
-from app.models.task import Task, TaskStatus, TaskStage
+from fastapi import HTTPException
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from app.models.task import Task, TaskStage, TaskStatus
 
 
 async def create_task(
     db: AsyncSession,
     user_id: uuid.UUID,
     exam_id: uuid.UUID,
-    simulate_failure_stage: Optional[TaskStage] = None,
+    simulate_failure_stage: TaskStage | None = None,
 ) -> Task:
     """
     Create a new task and prepare it for processing.
@@ -45,18 +45,18 @@ async def create_task(
         retry_count_by_stage={},
         error=None,
     )
-    
+
     db.add(task)
     await db.commit()
     await db.refresh(task)
-    
+
     return task
 
 
 async def get_task_by_id(
     db: AsyncSession,
     task_id: uuid.UUID,
-) -> Optional[Task]:
+) -> Task | None:
     """
     Get task by task_id.
     
@@ -105,10 +105,10 @@ async def update_task_status(
     db: AsyncSession,
     task_id: uuid.UUID,
     status: TaskStatus,
-    current_stage: Optional[TaskStage] = None,
-    progress: Optional[int] = None,
-    error: Optional[str] = None,
-) -> Optional[Task]:
+    current_stage: TaskStage | None = None,
+    progress: int | None = None,
+    error: str | None = None,
+) -> Task | None:
     """
     Update task status and related fields.
     
@@ -126,7 +126,7 @@ async def update_task_status(
     task = await get_task_by_id(db, task_id)
     if not task:
         return None
-    
+
     task.status = status
     if current_stage is not None:
         task.current_stage = current_stage
@@ -134,7 +134,7 @@ async def update_task_status(
         task.progress = progress
     if error is not None:
         task.error = error
-    
+
     await db.commit()
     await db.refresh(task)
     return task
@@ -144,7 +144,7 @@ async def increment_retry_count(
     db: AsyncSession,
     task_id: uuid.UUID,
     stage: TaskStage,
-) -> Optional[Task]:
+) -> Task | None:
     """
     Increment retry count for a specific stage.
     
@@ -159,18 +159,18 @@ async def increment_retry_count(
     task = await get_task_by_id(db, task_id)
     if not task:
         return None
-    
+
     # Get current retry count for this stage
     stage_name = stage.value
     current_count = task.retry_count_by_stage.get(stage_name, 0)
-    
+
     # Increment retry count
     task.retry_count_by_stage[stage_name] = current_count + 1
-    
+
     # Mark the change (SQLAlchemy may not detect JSONB dict updates)
     from sqlalchemy.orm import attributes
     attributes.flag_modified(task, "retry_count_by_stage")
-    
+
     await db.commit()
     await db.refresh(task)
     return task
@@ -204,22 +204,22 @@ async def get_task_with_logs(
         .options(selectinload(Task.logs))
     )
     task = result.scalar_one_or_none()
-    
+
     # Check if task exists
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-    
+
     # Check ownership
     if task.user_id != user_id:
         raise HTTPException(
             status_code=403,
             detail="You do not have permission to access this task"
         )
-    
+
     # Limit logs to most recent entries (already ordered by timestamp DESC in model)
     if task.logs and len(task.logs) > log_limit:
         task.logs = task.logs[:log_limit]
-    
+
     return task
 
 
@@ -247,41 +247,41 @@ async def retry_task(
         select(Task).where(Task.task_id == task_id)
     )
     task = result.scalar_one_or_none()
-    
+
     # Check if task exists
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-    
+
     # Check ownership
     if task.user_id != user_id:
         raise HTTPException(
             status_code=403,
             detail="You do not have permission to retry this task"
         )
-    
+
     # Check if task is in failed state
     if task.status != TaskStatus.FAILED:
         raise HTTPException(
             status_code=400,
             detail=f"Task is not in failed state (current status: {task.status.value})"
         )
-    
+
     # Increment retry count for the failed stage
     if task.current_stage:
         stage_name = task.current_stage.value
         current_count = task.retry_count_by_stage.get(stage_name, 0)
         task.retry_count_by_stage[stage_name] = current_count + 1
-        
+
         # Mark the JSONB field as modified
         from sqlalchemy.orm import attributes
         attributes.flag_modified(task, "retry_count_by_stage")
-    
+
     # Reset task to running state for Celery worker to resume processing
     task.status = TaskStatus.RUNNING
     task.error = None
-    
+
     await db.commit()
     await db.refresh(task)
-    
+
     return task
 

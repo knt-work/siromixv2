@@ -2,10 +2,10 @@
 Redis connection setup for caching and Celery broker.
 """
 
-import redis.asyncio as redis
 import os
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
+import redis.asyncio as redis
 
 # Redis URL from environment
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
@@ -23,14 +23,14 @@ async def get_redis_pool() -> redis.ConnectionPool:
         redis.ConnectionPool: Async Redis connection pool
     """
     global _redis_pool
-    
+
     if _redis_pool is None:
         _redis_pool = redis.ConnectionPool.from_url(
             REDIS_URL,
             decode_responses=True,
             max_connections=10,
         )
-    
+
     return _redis_pool
 
 
@@ -50,7 +50,7 @@ async def get_redis() -> AsyncGenerator[redis.Redis, None]:
     """
     pool = await get_redis_pool()
     client = redis.Redis(connection_pool=pool)
-    
+
     try:
         yield client
     finally:
@@ -60,7 +60,7 @@ async def get_redis() -> AsyncGenerator[redis.Redis, None]:
 async def close_redis() -> None:
     """Close Redis connection pool on shutdown."""
     global _redis_pool
-    
+
     if _redis_pool is not None:
         await _redis_pool.aclose()
         _redis_pool = None

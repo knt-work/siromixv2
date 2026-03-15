@@ -2,10 +2,11 @@
 Task schemas for API requests and responses.
 """
 
-from pydantic import BaseModel, Field, ConfigDict
+import uuid
 from datetime import datetime
 from enum import Enum
-import uuid
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class TaskStatus(str, Enum):
@@ -32,12 +33,12 @@ class TaskBase(BaseModel):
 
 class TaskCreate(TaskBase):
     """Schema for creating a new task."""
-    
+
     exam_id: uuid.UUID = Field(
         ...,
         description="Associated exam ID (required)"
     )
-    
+
     # MVP: No additional input parameters, tasks run mock pipeline
     simulate_failure_stage: TaskStage | None = Field(
         None,
@@ -47,7 +48,7 @@ class TaskCreate(TaskBase):
 
 class TaskResponse(TaskBase):
     """Schema for task response."""
-    
+
     task_id: uuid.UUID = Field(..., description="Unique task identifier")
     user_id: uuid.UUID = Field(..., description="Owner user ID")
     status: TaskStatus = Field(..., description="Current task status")
@@ -57,13 +58,13 @@ class TaskResponse(TaskBase):
     error: str | None = Field(None, description="Error message if failed")
     created_at: datetime = Field(..., description="When task was created")
     updated_at: datetime = Field(..., description="When task was last updated")
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
 class TaskRetryRequest(BaseModel):
     """Schema for retrying a failed task."""
-    
+
     force: bool = Field(
         False,
         description="Force retry even if task is not in failed state"
@@ -72,15 +73,16 @@ class TaskRetryRequest(BaseModel):
 
 class TaskWithLogsResponse(TaskResponse):
     """Schema for task response with logs included."""
-    
+
     logs: list["TaskLogResponse"] = Field(
         default_factory=list,
         description="Recent log entries (last 50)"
     )
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
 # Forward reference resolution
 from app.schemas.task_log import TaskLogResponse
+
 TaskWithLogsResponse.model_rebuild()

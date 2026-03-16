@@ -5,6 +5,7 @@ Provides dependency injection for authentication, database sessions, etc.
 """
 
 import logging
+import os
 
 from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,6 +17,31 @@ from app.models.user import User
 from app.services.user_service import get_or_create_user
 
 logger = logging.getLogger(__name__)
+
+
+def _is_dev_bypass_enabled() -> bool:
+    """Check if DEV_BYPASS_AUTH is enabled for local development."""
+    return os.getenv("DEV_BYPASS_AUTH", "").lower() == "true"
+
+
+def _parse_mock_token(token: str) -> dict[str, str] | None:
+    """
+    Parse mock-token-* format for local dev bypass.
+
+    Format: mock-token-{email} or mock-token-{identifier}
+    Returns user info dict if valid mock token, None otherwise.
+    """
+    if not token.startswith("mock-token-"):
+        return None
+    identifier = token[len("mock-token-"):]
+    if not identifier:
+        return None
+    email = identifier if "@" in identifier else f"{identifier}@dev.example.com"
+    return {
+        "google_sub": f"dev-{identifier}",
+        "email": email,
+        "display_name": identifier.split("@")[0] if "@" in identifier else identifier,
+    }
 
 
 async def get_current_user(
@@ -43,12 +69,8 @@ async def get_current_user(
         async def protected_route(user: User = Depends(get_current_user)):
             return {"user_id": user.user_id}
     """
-    logger.debug(f"Authorization header: {authorization}")
-
     # Extract token from header
     token = extract_bearer_token(authorization)
-
-    logger.debug(f"Extracted token: {token[:50] if token else None}...")
 
     if not token:
         raise HTTPException(
@@ -57,17 +79,25 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Verify Google token
-    try:
-        user_info = await verify_google_token(token)
-        logger.debug(f"User info: {user_info}")
-    except GoogleTokenError as e:
-        logger.debug(f"Token verification failed: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid token: {str(e)}",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    # DEV_BYPASS_AUTH: allow mock-token-* in local dev
+    if _is_dev_bypass_enabled() and token.startswith("mock-token-"):
+        user_info = _parse_mock_token(token)
+        if not user_info:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid mock token format. Use: mock-token-{email-or-id}",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    else:
+        # Verify real Google token
+        try:
+            user_info = await verify_google_token(token)
+        except GoogleTokenError as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid token: {str(e)}",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
 
     # Get or create user
     user = await get_or_create_user(
@@ -76,6 +106,10 @@ async def get_current_user(
         email=user_info['email'],
         display_name=user_info.get('display_name'),
     )
+
+    # Add transient fields from Google token (not stored in DB)
+    user.avatar_url = user_info.get('avatar_url')  # type: ignore
+    user.role = 'professor'  # type: ignore  # Fixed for MVP
 
     return user
 

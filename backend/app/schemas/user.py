@@ -21,12 +21,14 @@ class UserCreate(UserBase):
     google_sub: str = Field(..., min_length=1, max_length=255, description="Google subject identifier")
 
 
-class UserResponse(UserBase):
-    """Schema for user response."""
+class UserResponse(BaseModel):
+    """Schema for user response (matches frontend User type)."""
 
     user_id: uuid.UUID = Field(..., description="Unique user identifier")
-    google_sub: str = Field(..., description="Google subject identifier")
+    email: EmailStr = Field(..., description="User's email address")
+    full_name: str = Field(..., description="User's display name (from Google)")
+    avatar_url: str | None = Field(None, description="Google profile photo URL")
+    role: str = Field(default="professor", description="User role (fixed for MVP)")
     created_at: datetime = Field(..., description="When user was created")
-    updated_at: datetime = Field(..., description="When user was last updated")
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)

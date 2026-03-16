@@ -12,7 +12,6 @@ from app.core.auth import (
     verify_google_token,
     extract_bearer_token,
     GoogleTokenError,
-    GOOGLE_CLIENT_ID
 )
 
 
@@ -47,8 +46,8 @@ def test_extract_bearer_token_empty():
 @pytest.mark.asyncio
 async def test_verify_google_token_valid(monkeypatch):
     """Test verifying a valid Google ID token."""
-    # Mock the GOOGLE_CLIENT_ID
-    monkeypatch.setattr("app.core.auth.GOOGLE_CLIENT_ID", "test-client-id.apps.googleusercontent.com")
+    # Set GOOGLE_CLIENT_ID via environment
+    monkeypatch.setenv("GOOGLE_CLIENT_ID", "test-client-id.apps.googleusercontent.com")
     
     mock_token = "valid.test.token"
     mock_payload = {
@@ -74,8 +73,8 @@ async def test_verify_google_token_valid(monkeypatch):
 @pytest.mark.asyncio
 async def test_verify_google_token_expired(monkeypatch):
     """Test verifying an expired token."""
-    # Mock the GOOGLE_CLIENT_ID
-    monkeypatch.setattr("app.core.auth.GOOGLE_CLIENT_ID", "test-client-id.apps.googleusercontent.com")
+    # Set GOOGLE_CLIENT_ID via environment
+    monkeypatch.setenv("GOOGLE_CLIENT_ID", "test-client-id.apps.googleusercontent.com")
     
     mock_token = "expired.test.token"
     
@@ -91,8 +90,8 @@ async def test_verify_google_token_expired(monkeypatch):
 @pytest.mark.asyncio
 async def test_verify_google_token_invalid_signature(monkeypatch):
     """Test verifying a token with invalid signature."""
-    # Mock the GOOGLE_CLIENT_ID
-    monkeypatch.setattr("app.core.auth.GOOGLE_CLIENT_ID", "test-client-id.apps.googleusercontent.com")
+    # Set GOOGLE_CLIENT_ID via environment
+    monkeypatch.setenv("GOOGLE_CLIENT_ID", "test-client-id.apps.googleusercontent.com")
     
     mock_token = "invalid.signature.token"
     
@@ -108,8 +107,8 @@ async def test_verify_google_token_invalid_signature(monkeypatch):
 @pytest.mark.asyncio
 async def test_verify_google_token_wrong_audience(monkeypatch):
     """Test verifying a token with wrong audience (different client ID)."""
-    # Mock the GOOGLE_CLIENT_ID
-    monkeypatch.setattr("app.core.auth.GOOGLE_CLIENT_ID", "test-client-id.apps.googleusercontent.com")
+    # Set GOOGLE_CLIENT_ID via environment
+    monkeypatch.setenv("GOOGLE_CLIENT_ID", "test-client-id.apps.googleusercontent.com")
     
     mock_token = "wrong.audience.token"
     
@@ -123,8 +122,8 @@ async def test_verify_google_token_wrong_audience(monkeypatch):
 @pytest.mark.asyncio
 async def test_verify_google_token_malformed(monkeypatch):
     """Test verifying a malformed token."""
-    # Mock the GOOGLE_CLIENT_ID
-    monkeypatch.setattr("app.core.auth.GOOGLE_CLIENT_ID", "test-client-id.apps.googleusercontent.com")
+    # Set GOOGLE_CLIENT_ID via environment
+    monkeypatch.setenv("GOOGLE_CLIENT_ID", "test-client-id.apps.googleusercontent.com")
     
     mock_token = "not-a-valid-jwt"
     

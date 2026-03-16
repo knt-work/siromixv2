@@ -30,4 +30,12 @@ async def get_me(
     Raises:
         401: If token is missing, invalid, or expired
     """
-    return UserResponse.model_validate(current_user)
+    # Map User model to UserResponse (display_name → full_name)
+    return UserResponse(
+        user_id=current_user.user_id,
+        email=current_user.email,
+        full_name=current_user.display_name or current_user.email.split('@')[0],
+        avatar_url=getattr(current_user, 'avatar_url', None),
+        role=getattr(current_user, 'role', 'professor'),
+        created_at=current_user.created_at,
+    )

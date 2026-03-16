@@ -4,13 +4,18 @@ Authentication utilities using Google OAuth tokens.
 Verifies Google ID tokens and extracts user information.
 """
 
+import logging
 import os
 
 from google.auth.transport import requests
 from google.oauth2 import id_token
 
-# Google OAuth client ID from environment
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+logger = logging.getLogger(__name__)
+
+
+def _get_google_client_id() -> str:
+    """Read GOOGLE_CLIENT_ID lazily so load_dotenv() has time to run."""
+    return os.getenv("GOOGLE_CLIENT_ID", "")
 
 
 class GoogleTokenError(Exception):
@@ -35,7 +40,8 @@ async def verify_google_token(token: str) -> dict[str, str]:
         user_info = await verify_google_token(id_token)
         # {'google_sub': '1234...', 'email': 'user@example.com', 'display_name': 'John Doe'}
     """
-    if not GOOGLE_CLIENT_ID:
+    client_id = _get_google_client_id()
+    if not client_id:
         raise GoogleTokenError("GOOGLE_CLIENT_ID not configured")
 
     if not token:
@@ -46,17 +52,20 @@ async def verify_google_token(token: str) -> dict[str, str]:
         idinfo = id_token.verify_oauth2_token(
             token,
             requests.Request(),
-            GOOGLE_CLIENT_ID
+            client_id
         )
 
+        token_aud = idinfo.get('aud')
+
         # Ensure token is for the correct audience
-        if idinfo.get('aud') != GOOGLE_CLIENT_ID:
+        if token_aud != client_id:
             raise GoogleTokenError("Invalid token audience")
 
         # Extract user information
         google_sub = idinfo.get('sub')
         email = idinfo.get('email')
         display_name = idinfo.get('name')
+        avatar_url = idinfo.get('picture')  # Google profile photo
 
         if not google_sub:
             raise GoogleTokenError("Token missing subject (sub) claim")
@@ -68,6 +77,7 @@ async def verify_google_token(token: str) -> dict[str, str]:
             'google_sub': google_sub,
             'email': email,
             'display_name': display_name or email.split('@')[0],
+            'avatar_url': avatar_url,
         }
 
     except ValueError as e:

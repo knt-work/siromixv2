@@ -29,16 +29,26 @@ export const Avatar: React.FC<AvatarProps> = ({
 
   // Get initials from alt text or fallbackText
   const getInitials = (text: string): string => {
-    const words = text.trim().split(/\s+/);
+    if (!text || typeof text !== 'string') return '?';
+    const trimmed = text.trim();
+    if (!trimmed) return '?';
+    const words = trimmed.split(/\s+/);
     if (words.length >= 2 && words[0] && words[1]) {
       return `${words[0][0]}${words[1][0]}`.toUpperCase();
     }
-    return text.substring(0, 2).toUpperCase();
+    return trimmed.substring(0, 2).toUpperCase();
   };
 
-  const initials = getInitials(fallbackText || alt);
+  const initials = getInitials(fallbackText || alt || '');
 
   const [imageError, setImageError] = React.useState(false);
+
+  // Debug logging
+  React.useEffect(() => {
+    if (src) {
+      console.log('[Avatar] Loading image:', src);
+    }
+  }, [src]);
 
   // Show fallback if no src, image error, or src is null
   const showFallback = !src || imageError;

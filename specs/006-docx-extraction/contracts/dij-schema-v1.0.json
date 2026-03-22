@@ -1,0 +1,379 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://siromix.com/schemas/dij/v1.0.json",
+  "title": "Document Intermediate JSON (DIJ) v1.0",
+  "description": "Canonical representation of extracted DOCX content for SiroMix exam processing pipeline",
+  "type": "object",
+  "required": ["version", "document_id", "blocks", "metadata"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Schema version (must be '1.0')"
+    },
+    "document_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID linking to source exam/artifact"
+    },
+    "blocks": {
+      "type": "array",
+      "description": "Sequential blocks (paragraphs, tables, images, math)",
+      "items": {
+        "$ref": "#/definitions/Block"
+      }
+    },
+    "metadata": {
+      "$ref": "#/definitions/ExtractionMetadata"
+    }
+  },
+  "definitions": {
+    "Block": {
+      "type": "object",
+      "required": ["id", "type", "sequence", "content", "provenance"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique block UUID"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["paragraph", "table", "image", "math"],
+          "description": "Block type"
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Sequential position (1-indexed)"
+        },
+        "content": {
+          "type": "object",
+          "description": "Type-specific content"
+        },
+        "provenance": {
+          "$ref": "#/definitions/Provenance"
+        }
+      }
+    },
+    "Provenance": {
+      "type": "object",
+      "required": ["source_document_id", "original_position", "extraction_timestamp", "extraction_method"],
+      "properties": {
+        "source_document_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of source artifact (DOCX file)"
+        },
+        "original_position": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Zero-based index in source document"
+        },
+        "extraction_timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When this block was extracted (ISO 8601)"
+        },
+        "extraction_method": {
+          "type": "string",
+          "description": "Extraction tool/version (e.g., 'python-docx-1.1.0')"
+        }
+      }
+    },
+    "ParagraphContent": {
+      "type": "object",
+      "required": ["runs"],
+      "properties": {
+        "runs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TextRun"
+          }
+        },
+        "alignment": {
+          "type": ["string", "null"],
+          "enum": ["left", "center", "right", "justify", null]
+        },
+        "indent_left": {
+          "type": ["number", "null"],
+          "description": "Left indent in points"
+        },
+        "indent_right": {
+          "type": ["number", "null"],
+          "description": "Right indent in points"
+        },
+        "space_before": {
+          "type": ["number", "null"],
+          "description": "Spacing before paragraph (points)"
+        },
+        "space_after": {
+          "type": ["number", "null"],
+          "description": "Spacing after paragraph (points)"
+        },
+        "line_spacing": {
+          "type": ["number", "null"],
+          "description": "Line spacing multiplier"
+        },
+        "style": {
+          "type": ["string", "null"],
+          "description": "Named style (e.g., 'Heading 1')"
+        }
+      }
+    },
+    "TextRun": {
+      "type": "object",
+      "required": ["text"],
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "bold": {
+          "type": "boolean",
+          "default": false
+        },
+        "italic": {
+          "type": "boolean",
+          "default": false
+        },
+        "underline": {
+          "type": "boolean",
+          "default": false
+        },
+        "font_name": {
+          "type": ["string", "null"]
+        },
+        "font_size": {
+          "type": ["number", "null"],
+          "description": "Font size in points"
+        },
+        "color": {
+          "type": ["string", "null"],
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "description": "Hex RGB color (e.g., '#FF5733')"
+        }
+      }
+    },
+    "TableContent": {
+      "type": "object",
+      "required": ["rows"],
+      "properties": {
+        "rows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TableRow"
+          }
+        },
+        "style": {
+          "type": ["string", "null"],
+          "description": "Named table style"
+        }
+      }
+    },
+    "TableRow": {
+      "type": "object",
+      "required": ["cells"],
+      "properties": {
+        "cells": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TableCell"
+          }
+        },
+        "is_header": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "TableCell": {
+      "type": "object",
+      "required": ["content"],
+      "properties": {
+        "content": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CellContent"
+          }
+        },
+        "rowspan": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        },
+        "colspan": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        },
+        "background_color": {
+          "type": ["string", "null"],
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "borders": {
+          "type": ["object", "null"],
+          "$ref": "#/definitions/CellBorders"
+        }
+      }
+    },
+    "CellContent": {
+      "type": "object",
+      "required": ["type", "data"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["text", "image", "math"]
+        },
+        "data": {
+          "type": "object",
+          "description": "Type-specific data"
+        }
+      }
+    },
+    "CellBorders": {
+      "type": "object",
+      "properties": {
+        "top": {
+          "type": ["object", "null"],
+          "$ref": "#/definitions/BorderStyle"
+        },
+        "right": {
+          "type": ["object", "null"],
+          "$ref": "#/definitions/BorderStyle"
+        },
+        "bottom": {
+          "type": ["object", "null"],
+          "$ref": "#/definitions/BorderStyle"
+        },
+        "left": {
+          "type": ["object", "null"],
+          "$ref": "#/definitions/BorderStyle"
+        }
+      }
+    },
+    "BorderStyle": {
+      "type": "object",
+      "required": ["width", "color", "style"],
+      "properties": {
+        "width": {
+          "type": "number",
+          "description": "Border width in points"
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "style": {
+          "type": "string",
+          "description": "Border style (e.g., 'single', 'double', 'dashed')"
+        }
+      }
+    },
+    "ImageContent": {
+      "type": "object",
+      "required": ["artifact_id", "content_type"],
+      "properties": {
+        "artifact_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of image artifact in storage"
+        },
+        "width": {
+          "type": ["number", "null"],
+          "description": "Original width in pixels"
+        },
+        "height": {
+          "type": ["number", "null"],
+          "description": "Original height in pixels"
+        },
+        "alt_text": {
+          "type": ["string", "null"],
+          "description": "Alternative text from DOCX"
+        },
+        "title": {
+          "type": ["string", "null"],
+          "description": "Image title from DOCX"
+        },
+        "content_type": {
+          "type": "string",
+          "pattern": "^image/",
+          "description": "MIME type (e.g., 'image/png')"
+        }
+      }
+    },
+    "MathContent": {
+      "type": "object",
+      "required": ["omml", "conversion_failed"],
+      "properties": {
+        "latex": {
+          "type": ["string", "null"],
+          "description": "LaTeX representation (if conversion succeeded)"
+        },
+        "omml": {
+          "type": "string",
+          "description": "Original OMML XML (always preserved)"
+        },
+        "conversion_failed": {
+          "type": "boolean",
+          "description": "True if LaTeX conversion failed"
+        },
+        "conversion_error": {
+          "type": ["string", "null"],
+          "description": "Error message if conversion failed"
+        }
+      }
+    },
+    "ExtractionMetadata": {
+      "type": "object",
+      "required": [
+        "extraction_timestamp",
+        "source_filename",
+        "source_file_size",
+        "total_blocks",
+        "block_type_counts",
+        "extraction_duration_ms",
+        "warnings"
+      ],
+      "properties": {
+        "extraction_timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When extraction completed (ISO 8601)"
+        },
+        "source_filename": {
+          "type": "string",
+          "description": "Original DOCX filename"
+        },
+        "source_file_size": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "File size in bytes"
+        },
+        "total_blocks": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total blocks extracted"
+        },
+        "block_type_counts": {
+          "type": "object",
+          "description": "Count of each block type (e.g., {'paragraph': 50})",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "extraction_duration_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Extraction duration in milliseconds"
+        },
+        "warnings": {
+          "type": "array",
+          "description": "Non-fatal warnings during extraction",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

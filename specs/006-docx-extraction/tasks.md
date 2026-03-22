@@ -38,22 +38,22 @@
 
 ### DIJ Schema Models (Required by All Stories)
 
-- [ ] T008 Create backend/app/schemas/dij.py with DIJv1 base model (version, document_id, blocks, metadata)
-- [ ] T009 Add BlockType enum (PARAGRAPH, TABLE, IMAGE, MATH) to backend/app/schemas/dij.py
-- [ ] T010 [P] Add Provenance model to backend/app/schemas/dij.py
-- [ ] T011 [P] Add ExtractionMetadata model to backend/app/schemas/dij.py
-- [ ] T012 [P] Add Block base model to backend/app/schemas/dij.py
+- [X] T008 Create backend/app/schemas/dij.py with DIJv1 base model (version, document_id, blocks, metadata)
+- [X] T009 Add BlockType enum (PARAGRAPH, TABLE, IMAGE, MATH) to backend/app/schemas/dij.py
+- [X] T010 [P] Add Provenance model to backend/app/schemas/dij.py
+- [X] T011 [P] Add ExtractionMetadata model to backend/app/schemas/dij.py
+- [X] T012 [P] Add Block base model to backend/app/schemas/dij.py
 
 ### Error Handling Infrastructure
 
-- [ ] T013 Create backend/app/core/exceptions.py with ExtractionError class (error_code, user_message, technical_details, original_exception)
-- [ ] T014 Add error code constants to backend/app/core/exceptions.py (DOCX_INVALID_FORMAT, DOCX_CORRUPTED, DOCX_TOO_LARGE, EXTRACTION_TIMEOUT, etc.)
+- [X] T013 Create backend/app/core/exceptions.py with ExtractionError class (error_code, user_message, technical_details, original_exception)
+- [X] T014 Add error code constants to backend/app/core/exceptions.py (DOCX_INVALID_FORMAT, DOCX_CORRUPTED, DOCX_TOO_LARGE, EXTRACTION_TIMEOUT, etc.)
 
 ### Base Parser Infrastructure
 
-- [ ] T015 Create backend/app/core/docx_parser.py with DocxParser class skeleton
-- [ ] T016 Add DOCX file validation method to DocxParser (check file exists, size limit 50MB, valid DOCX format)
-- [ ] T017 [P] Add extraction timeout decorator (5 minute max) in backend/app/core/docx_parser.py
+- [X] T015 Create backend/app/core/docx_parser.py with DocxParser class skeleton
+- [X] T016 Add DOCX file validation method to DocxParser (check file exists, size limit 50MB, valid DOCX format)
+- [X] T017 [P] Add extraction timeout decorator (5 minute max) in backend/app/core/docx_parser.py
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -69,35 +69,35 @@
 
 > **CONSTITUTION REQUIREMENT**: Write these tests FIRST, ensure they FAIL before implementation
 
-- [ ] T018 [P] [US1] Unit test: Extract single plain paragraph from simple_text.docx in backend/tests/unit/test_docx_parser.py
-- [ ] T019 [P] [US1] Unit test: Extract paragraph with bold/italic/underline formatting in backend/tests/unit/test_docx_parser.py
-- [ ] T020 [P] [US1] Unit test: Extract paragraph with font metadata (name, size, color) in backend/tests/unit/test_docx_parser.py
-- [ ] T021 [P] [US1] Unit test: Filter empty paragraphs (verify not in output) in backend/tests/unit/test_docx_parser.py
-- [ ] T022 [P] [US1] Unit test: Verify paragraph sequence numbering (1-indexed) in backend/tests/unit/test_docx_parser.py
-- [ ] T023 [P] [US1] Unit test: Verify provenance metadata for each paragraph block in backend/tests/unit/test_docx_parser.py
+- [X] T018 [P] [US1] Unit test: Extract single plain paragraph from simple_text.docx in backend/tests/unit/test_docx_parser.py
+- [X] T019 [P] [US1] Unit test: Extract paragraph with bold/italic/underline formatting in backend/tests/unit/test_docx_parser.py
+- [X] T020 [P] [US1] Unit test: Extract paragraph with font metadata (name, size, color) in backend/tests/unit/test_docx_parser.py
+- [X] T021 [P] [US1] Unit test: Filter empty paragraphs (verify not in output) in backend/tests/unit/test_docx_parser.py
+- [X] T022 [P] [US1] Unit test: Verify paragraph sequence numbering (1-indexed) in backend/tests/unit/test_docx_parser.py
+- [X] T023 [P] [US1] Unit test: Verify provenance metadata for each paragraph block in backend/tests/unit/test_docx_parser.py
 
 ### Schema Models for User Story 1
 
-- [ ] T024 [P] [US1] Add ParagraphContent model to backend/app/schemas/dij.py (runs, alignment, indents, spacing, style)
-- [ ] T025 [P] [US1] Add TextRun model to backend/app/schemas/dij.py (text, bold, italic, underline, font_name, font_size, color)
+- [X] T024 [P] [US1] Add ParagraphContent model to backend/app/schemas/dij.py (runs, alignment, indents, spacing, style)
+- [X] T025 [P] [US1] Add TextRun model to backend/app/schemas/dij.py (text, bold, italic, underline, font_name, font_size, color)
 
 ### Implementation for User Story 1
 
-- [ ] T026 [US1] Implement extract_blocks() method in backend/app/core/docx_parser.py (iterate paragraphs, skip empty)
-- [ ] T027 [US1] Implement _extract_paragraph() method in backend/app/core/docx_parser.py (extract text runs with formatting)
-- [ ] T028 [US1] Implement _extract_text_run() helper in backend/app/core/docx_parser.py (bold, italic, underline, font properties, color conversion to hex)
-- [ ] T029 [US1] Implement _extract_paragraph_format() helper in backend/app/core/docx_parser.py (alignment, indents, spacing, line spacing, style)
-- [ ] T030 [US1] Add provenance metadata generation in backend/app/core/docx_parser.py (_create_provenance method)
-- [ ] T031 [US1] Add block sequence numbering logic in backend/app/core/docx_parser.py
-- [ ] T032 [US1] Create backend/app/services/extraction_service.py with ExtractionService class
-- [ ] T033 [US1] Implement extract_dij() method skeleton in backend/app/services/extraction_service.py (coordinates parser, builds DIJ, handles timing)
-- [ ] T034 [US1] Build DIJ metadata in extraction_service.py (extraction_timestamp, source_filename, total_blocks, block_type_counts, duration_ms, warnings)
-- [ ] T035 [US1] Validate DIJ against Pydantic schema before returning in extraction_service.py
+- [X] T026 [US1] Implement extract_blocks() method in backend/app/core/docx_parser.py (iterate paragraphs, skip empty)
+- [X] T027 [US1] Implement _extract_paragraph() method in backend/app/core/docx_parser.py (extract text runs with formatting)
+- [X] T028 [US1] Implement _extract_text_run() helper in backend/app/core/docx_parser.py (bold, italic, underline, font properties, color conversion to hex)
+- [X] T029 [US1] Implement _extract_paragraph_format() helper in backend/app/core/docx_parser.py (alignment, indents, spacing, line spacing, style)
+- [X] T030 [US1] Add provenance metadata generation in backend/app/core/docx_parser.py (_create_provenance method)
+- [X] T031 [US1] Add block sequence numbering logic in backend/app/core/docx_parser.py
+- [X] T032 [US1] Create backend/app/services/extraction_service.py with ExtractionService class
+- [X] T033 [US1] Implement extract_dij() method skeleton in backend/app/services/extraction_service.py (coordinates parser, builds DIJ, handles timing)
+- [X] T034 [US1] Build DIJ metadata in extraction_service.py (extraction_timestamp, source_filename, total_blocks, block_type_counts, duration_ms, warnings)
+- [X] T035 [US1] Validate DIJ against Pydantic schema before returning in extraction_service.py
 
 ### Integration Tests for User Story 1
 
-- [ ] T036 [US1] Integration test: Extract simple_text.docx fixture → verify complete DIJ structure in backend/tests/integration/test_extract_docx_stage.py
-- [ ] T037 [US1] Integration test: Verify 100% text accuracy (character-for-character match) in backend/tests/integration/test_extract_docx_stage.py
+- [X] T036 [US1] Integration test: Extract simple_text.docx fixture → verify complete DIJ structure in backend/tests/integration/test_extract_docx_stage.py
+- [X] T037 [US1] Integration test: Verify 100% text accuracy (character-for-character match) in backend/tests/integration/test_extract_docx_stage.py
 - [ ] T038 [US1] Integration test: Verify formatting metadata completeness in backend/tests/integration/test_extract_docx_stage.py
 
 **Checkpoint**: Text paragraph extraction fully functional - MVP deliverable
@@ -114,33 +114,33 @@
 
 > **CONSTITUTION REQUIREMENT**: Write these tests FIRST, ensure they FAIL before implementation
 
-- [ ] T039 [P] [US2] Unit test: Extract simple table (3x3, no spans) from with_tables.docx in backend/tests/unit/test_docx_parser.py
-- [ ] T040 [P] [US2] Unit test: Extract table with merged cells (rowspan, colspan) in backend/tests/unit/test_docx_parser.py
-- [ ] T041 [P] [US2] Unit test: Extract table with header row flag in backend/tests/unit/test_docx_parser.py
-- [ ] T042 [P] [US2] Unit test: Extract table with cell borders and background colors in backend/tests/unit/test_docx_parser.py
-- [ ] T043 [P] [US2] Unit test: Extract table with formatted text in cells in backend/tests/unit/test_docx_parser.py
+- [X] T039 [P] [US2] Unit test: Extract simple table (3x3, no spans) from with_tables.docx in backend/tests/unit/test_docx_parser.py
+- [X] T040 [P] [US2] Unit test: Extract table with merged cells (rowspan, colspan) in backend/tests/unit/test_docx_parser.py
+- [X] T041 [P] [US2] Unit test: Extract table with header row flag in backend/tests/unit/test_docx_parser.py
+- [X] T042 [P] [US2] Unit test: Extract table with cell borders and background colors in backend/tests/unit/test_docx_parser.py
+- [X] T043 [P] [US2] Unit test: Extract table with formatted text in cells in backend/tests/unit/test_docx_parser.py
 
 ### Schema Models for User Story 2
 
-- [ ] T044 [P] [US2] Add TableContent model to backend/app/schemas/dij.py (rows, style)
-- [ ] T045 [P] [US2] Add TableRow model to backend/app/schemas/dij.py (cells, is_header)
-- [ ] T046 [P] [US2] Add TableCell model to backend/app/schemas/dij.py (content, rowspan, colspan, background_color, borders)
-- [ ] T047 [P] [US2] Add CellContent model to backend/app/schemas/dij.py (type: text/image/math, data)
-- [ ] T048 [P] [US2] Add CellBorders and BorderStyle models to backend/app/schemas/dij.py
+- [X] T044 [P] [US2] Add TableContent model to backend/app/schemas/dij.py (rows, style)
+- [X] T045 [P] [US2] Add TableRow model to backend/app/schemas/dij.py (cells, is_header)
+- [X] T046 [P] [US2] Add TableCell model to backend/app/schemas/dij.py (content, rowspan, colspan, background_color, borders)
+- [X] T047 [P] [US2] Add CellContent model to backend/app/schemas/dij.py (type: text/image/math, data)
+- [X] T048 [P] [US2] Add CellBorders and BorderStyle models to backend/app/schemas/dij.py
 
 ### Implementation for User Story 2
 
-- [ ] T049 [US2] Implement _extract_table() method in backend/app/core/docx_parser.py (detect tables in document)
-- [ ] T050 [US2] Implement _extract_table_rows() helper in backend/app/core/docx_parser.py (iterate rows, detect header rows)
-- [ ] T051 [US2] Implement _extract_table_cell() helper in backend/app/core/docx_parser.py (cell content, spans, background, borders)
-- [ ] T052 [US2] Handle nested paragraphs in table cells in backend/app/core/docx_parser.py (_extract_cell_paragraphs)
-- [ ] T053 [US2] Update extract_blocks() in backend/app/core/docx_parser.py to handle mixed paragraphs and tables
-- [ ] T054 [US2] Update extraction_service.py to handle table blocks in block_type_counts
+- [X] T049 [US2] Implement _extract_table() method in backend/app/core/docx_parser.py (detect tables in document)
+- [X] T050 [US2] Implement _extract_table_rows() helper in backend/app/core/docx_parser.py (iterate rows, detect header rows)
+- [X] T051 [US2] Implement _extract_table_cell() helper in backend/app/core/docx_parser.py (cell content, spans, background, borders)
+- [X] T052 [US2] Handle nested paragraphs in table cells in backend/app/core/docx_parser.py (_extract_cell_paragraphs)
+- [X] T053 [US2] Update extract_blocks() in backend/app/core/docx_parser.py to handle mixed paragraphs and tables
+- [X] T054 [US2] Update extraction_service.py to handle table blocks in block_type_counts
 
 ### Integration Tests for User Story 2
 
-- [ ] T055 [US2] Integration test: Extract with_tables.docx fixture → verify table structure accuracy (95% per SC-004) in backend/tests/integration/test_extract_docx_stage.py
-- [ ] T056 [US2] Integration test: Verify cell span metadata correctness in backend/tests/integration/test_extract_docx_stage.py
+- [X] T055 [US2] Integration test: Extract with_tables.docx fixture → verify table structure accuracy (95% per SC-004) in backend/tests/integration/test_extract_docx_stage.py
+- [X] T056 [US2] Integration test: Verify cell span metadata correctness in backend/tests/integration/test_extract_docx_stage.py
 
 **Checkpoint**: Table extraction functional - US1 and US2 both work independently
 

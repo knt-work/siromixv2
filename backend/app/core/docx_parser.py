@@ -276,23 +276,54 @@ class DocxParser:
             if id(element) in paragraph_map:
                 para = paragraph_map[id(element)]
                 
-                # Skip empty paragraphs (filter)
-                text_content = para.text.strip()
-                if not text_content:
+                # Check if paragraph contains math equations (Phase 6 - T089)
+                has_math = self._paragraph_has_math(para)
+                
+                if has_math:
+                    # Extract as math block
+                    block = self._extract_math(
+                        para,
+                        sequence=sequence,
+                        original_position=original_position,
+                        source_document_id=source_document_id
+                    )
+                    blocks.append(block)
+                    sequence += 1
                     original_position += 1
                     continue
                 
-                # Extract paragraph block
-                block = self._extract_paragraph(
-                    para,
-                    sequence=sequence,
-                    original_position=original_position,
-                    source_document_id=source_document_id
-                )
+                # Check if paragraph contains an inline image (Phase 5 - T070)
+                has_image = self._paragraph_has_inline_image(para)
                 
-                blocks.append(block)
-                sequence += 1
-                original_position += 1
+                if has_image:
+                    # Extract as image block
+                    block = self._extract_image(
+                        para,
+                        sequence=sequence,
+                        original_position=original_position,
+                        source_document_id=source_document_id
+                    )
+                    blocks.append(block)
+                    sequence += 1
+                    original_position += 1
+                else:
+                    # Skip empty paragraphs (filter)
+                    text_content = para.text.strip()
+                    if not text_content:
+                        original_position += 1
+                        continue
+                    
+                    # Extract paragraph block
+                    block = self._extract_paragraph(
+                        para,
+                        sequence=sequence,
+                        original_position=original_position,
+                        source_document_id=source_document_id
+                    )
+                    
+                    blocks.append(block)
+                    sequence += 1
+                    original_position += 1
             
             # Check if this is a table (Phase 4)
             elif id(element) in table_map:
@@ -443,6 +474,152 @@ class DocxParser:
             format_data["style"] = para.style.name
         
         return format_data
+    
+    def _paragraph_has_inline_image(self, para) -> bool:
+        """
+        Detect if paragraph contains an inline image (Phase 5 - T070)
+        
+        Args:
+            para: python-docx Paragraph object
+        
+        Returns:
+            True if paragraph contains at least one inline image
+        """
+        # Check each run for inline shapes
+        for run in para.runs:
+            # Look for blip elements (image references) in the run
+            blips = run._element.findall('.//{*}blip')
+            if blips:
+                return True
+        
+        return False
+    
+    def _paragraph_has_math(self, para) -> bool:
+        """
+        Detect if paragraph contains math equations (Phase 6 - T089)
+        
+        Args:
+            para: python-docx Paragraph object
+        
+        Returns:
+            True if paragraph contains at least one OMML equation
+        """
+        # Look for oMath elements (Office Math Markup Language)
+        omml_namespace = "http://schemas.openxmlformats.org/officeDocument/2006/math"
+        omml_elements = para._element.findall(f'.//{{{omml_namespace}}}oMath')
+        
+        return len(omml_elements) > 0
+    
+    def _extract_image(
+        self,
+        para,
+        sequence: int,
+        original_position: int,
+        source_document_id: str
+    ) -> dict:
+        """
+        Extract image block placeholder (Phase 5 - T071)
+        
+        Creates image block with position and metadata placeholders.
+        Actual image upload and artifact_id population happens in ExtractionService.
+        
+        Args:
+            para: python-docx Paragraph object containing inline image
+            sequence: Sequential position (1-indexed)
+            original_position: Original position in document (0-indexed)
+            source_document_id: UUID of source document
+        
+        Returns:
+            Image block dictionary with placeholder content
+        """
+        # Find the first blip (image) in the paragraph
+        image_rel_id = None
+        for run in para.runs:
+            blips = run._element.findall('.//{*}blip')
+            if blips:
+                # Get the relationship ID from the blip
+                blip = blips[0]
+                ns_r = '{http://schemas.openxmlformats.org/officeDocument/2006/relationships}'
+                image_rel_id = blip.get(f'{ns_r}embed')
+                break
+        
+        # Create provenance metadata
+        provenance = self._create_provenance(
+            source_document_id=source_document_id,
+            original_position=original_position
+        )
+        
+        # Create image block placeholder
+        # The artifact_id and other metadata will be populated by ExtractionService
+        return {
+            "id": f"block-{uuid4().hex[:12]}",
+            "type": "image",
+            "sequence": sequence,
+            "content": {
+                "artifact_id": None,  # Will be populated by ExtractionService
+                "width": None,  # Will be populated by ImageExtractor
+                "height": None,  # Will be populated by ImageExtractor
+                "alt_text": None,  # Will be populated by ImageExtractor
+                "title": None,  # Will be populated by ImageExtractor
+                "content_type": None,  # Will be populated by ImageExtractor
+                "_image_rel_id": image_rel_id  # Internal: for ExtractionService to find the image
+            },
+            "provenance": provenance
+        }
+    
+    def _extract_math(
+        self,
+        para,
+        sequence: int,
+        original_position: int,
+        source_document_id: str
+    ) -> dict:
+        """
+        Extract math equation block (Phase 6 - T090)
+        
+        Creates math block with OMML XML content.
+        LaTeX conversion happens in ExtractionService.
+        
+        Args:
+            para: python-docx Paragraph object containing math equation
+            sequence: Sequential position (1-indexed)
+            original_position: Original position in document (0-indexed)
+            source_document_id: UUID of source document
+        
+        Returns:
+            Math block dictionary with OMML content
+        """
+        from lxml import etree
+        
+        # Extract OMML XML from paragraph
+        omml_namespace = "http://schemas.openxmlformats.org/officeDocument/2006/math"
+        omml_elements = para._element.findall(f'.//{{{omml_namespace}}}oMath')
+        
+        # Get the first OMML element as XML string
+        omml_xml = ""
+        if omml_elements:
+            omml_xml = etree.tostring(omml_elements[0], encoding='unicode')
+        
+        # Create provenance metadata
+        provenance = self._create_provenance(
+            source_document_id=source_document_id,
+            original_position=original_position
+        )
+        
+        # Create math block with OMML
+        # LaTeX conversion will be done by ExtractionService
+        return {
+            "id": f"block-{uuid4().hex[:12]}",
+            "type": "math",
+            "sequence": sequence,
+            "content": {
+                "latex": None,  # Will be populated by ExtractionService
+                "omml": omml_xml,  # Always preserve original OMML
+                "conversion_failed": None,  # Will be set by ExtractionService
+                "conversion_error": None  # Will be set by ExtractionService
+            },
+            "provenance": provenance
+        }
     
     def _create_provenance(
         self,

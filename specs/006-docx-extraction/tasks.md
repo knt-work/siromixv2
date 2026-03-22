@@ -156,35 +156,35 @@
 
 > **CONSTITUTION REQUIREMENT**: Write these tests FIRST, ensure they FAIL before implementation
 
-- [ ] T057 [P] [US3] Unit test: Extract single PNG image from with_images.docx in backend/tests/unit/test_image_extractor.py
-- [ ] T058 [P] [US3] Unit test: Extract JPEG image and verify format preservation in backend/tests/unit/test_image_extractor.py
-- [ ] T059 [P] [US3] Unit test: Generate unique artifact filename (task_id_sequence_image_id.ext) in backend/tests/unit/test_image_extractor.py
-- [ ] T060 [P] [US3] Unit test: Upload image to S3/MinIO via artifact_service in backend/tests/unit/test_image_extractor.py (mock S3)
-- [ ] T061 [P] [US3] Unit test: Create artifact record with correct metadata in backend/tests/unit/test_image_extractor.py
-- [ ] T062 [P] [US3] Unit test: Detect duplicate images by content hash in backend/tests/unit/test_image_extractor.py
+- [X] T057 [P] [US3] Unit test: Extract single PNG image from with_images.docx in backend/tests/unit/test_image_extractor.py
+- [X] T058 [P] [US3] Unit test: Extract JPEG image and verify format preservation in backend/tests/unit/test_image_extractor.py
+- [X] T059 [P] [US3] Unit test: Generate unique artifact filename (task_id_sequence_image_id.ext) in backend/tests/unit/test_image_extractor.py
+- [X] T060 [P] [US3] Unit test: Upload image to S3/MinIO via artifact_service in backend/tests/unit/test_image_extractor.py (mock S3)
+- [X] T061 [P] [US3] Unit test: Create artifact record with correct metadata in backend/tests/unit/test_image_extractor.py
+- [X] T062 [P] [US3] Unit test: Detect duplicate images by content hash in backend/tests/unit/test_image_extractor.py
 
 ### Schema Models for User Story 3
 
-- [ ] T063 [P] [US3] Add ImageContent model to backend/app/schemas/dij.py (artifact_id, width, height, alt_text, title, content_type)
+- [X] T063 [P] [US3] Add ImageContent model to backend/app/schemas/dij.py (artifact_id, width, height, alt_text, title, content_type)
 
 ### Implementation for User Story 3
 
-- [ ] T064 [US3] Create backend/app/core/image_extractor.py with ImageExtractor class
-- [ ] T065 [US3] Implement extract_images() method in ImageExtractor (find all InlineShapes and drawing objects)
-- [ ] T066 [US3] Implement _extract_image_binary() helper in ImageExtractor (get image.blob from relationships)
-- [ ] T067 [US3] Implement _generate_artifact_filename() in ImageExtractor (format: task_id_seq_id.ext)
-- [ ] T068 [US3] Implement _compute_content_hash() in ImageExtractor (SHA256 for deduplication)
-- [ ] T069 [US3] Implement extract_and_upload() method in ImageExtractor (upload to S3, create artifact record, return artifact_id)
-- [ ] T070 [US3] Update _extract_paragraph() in docx_parser.py to detect inline images
-- [ ] T071 [US3] Add _extract_image() method to docx_parser.py (create image block placeholder with position)
-- [ ] T072 [US3] Update extraction_service.py to process image blocks (call ImageExtractor, populate artifact_id)
-- [ ] T073 [US3] Update extraction_service.py to handle image upload errors gracefully
+- [X] T064 [US3] Create backend/app/core/image_extractor.py with ImageExtractor class
+- [X] T065 [US3] Implement extract_images() method in ImageExtractor (find all InlineShapes and drawing objects)
+- [X] T066 [US3] Implement _extract_image_binary() helper in ImageExtractor (get image.blob from relationships)
+- [X] T067 [US3] Implement _generate_artifact_filename() in ImageExtractor (format: task_id_seq_id.ext)
+- [X] T068 [US3] Implement _compute_content_hash() in ImageExtractor (SHA256 for deduplication)
+- [X] T069 [US3] Implement extract_and_upload() method in ImageExtractor (upload to S3, create artifact record, return artifact_id)
+- [X] T070 [US3] Update _extract_paragraph() in docx_parser.py to detect inline images
+- [X] T071 [US3] Add _extract_image() method to docx_parser.py (create image block placeholder with position)
+- [X] T072 [US3] Update extraction_service.py to process image blocks (call ImageExtractor, populate artifact_id)
+- [X] T073 [US3] Update extraction_service.py to handle image upload errors gracefully
 
 ### Integration Tests for User Story 3
 
-- [ ] T074 [US3] Integration test: Extract with_images.docx → verify all images stored as artifacts (SC-005) in backend/tests/integration/test_extract_docx_stage.py
-- [ ] T075 [US3] Integration test: Verify DIJ image blocks contain valid artifact_id references in backend/tests/integration/test_extract_docx_stage.py
-- [ ] T076 [US3] Integration test: Verify image content integrity (no data loss) in backend/tests/integration/test_extract_docx_stage.py
+- [X] T074 [US3] Integration test: Extract with_images.docx → verify all images stored as artifacts (SC-005) in backend/tests/integration/test_extract_docx_stage.py
+- [X] T075 [US3] Integration test: Verify DIJ image blocks contain valid artifact_id references in backend/tests/integration/test_extract_docx_stage.py
+- [X] T076 [US3] Integration test: Verify image content integrity (no data loss) in backend/tests/integration/test_extract_docx_stage.py
 
 **Checkpoint**: Image extraction functional - US1, US2, US3 all work independently
 
@@ -200,34 +200,34 @@
 
 > **CONSTITUTION REQUIREMENT**: Write these tests FIRST, ensure they FAIL before implementation
 
-- [ ] T077 [P] [US4] Unit test: Extract OMML XML from with_math.docx in backend/tests/unit/test_math_converter.py
-- [ ] T078 [P] [US4] Unit test: Convert simple OMML equation to LaTeX in backend/tests/unit/test_math_converter.py
-- [ ] T079 [P] [US4] Unit test: Convert complex nested OMML to LaTeX in backend/tests/unit/test_math_converter.py
-- [ ] T080 [P] [US4] Unit test: Handle OMML conversion failure (preserve OMML, set conversion_failed=true) in backend/tests/unit/test_math_converter.py
-- [ ] T081 [P] [US4] Unit test: Detect inline vs display-mode equations in backend/tests/unit/test_math_converter.py
+- [X] T077 [P] [US4] Unit test: Extract OMML XML from with_math.docx in backend/tests/unit/test_math_converter.py
+- [X] T078 [P] [US4] Unit test: Convert simple OMML equation to LaTeX in backend/tests/unit/test_math_converter.py
+- [X] T079 [P] [US4] Unit test: Convert complex nested OMML to LaTeX in backend/tests/unit/test_math_converter.py
+- [X] T080 [P] [US4] Unit test: Handle OMML conversion failure (preserve OMML, set conversion_failed=true) in backend/tests/unit/test_math_converter.py
+- [X] T081 [P] [US4] Unit test: Detect inline vs display-mode equations in backend/tests/unit/test_math_converter.py
 
 ### Schema Models for User Story 4
 
-- [ ] T082 [P] [US4] Add MathContent model to backend/app/schemas/dij.py (latex, omml, conversion_failed, conversion_error)
+- [X] T082 [P] [US4] Add MathContent model to backend/app/schemas/dij.py (latex, omml, conversion_failed, conversion_error)
 
 ### Implementation for User Story 4
 
-- [ ] T083 [US4] Create backend/app/core/math_converter.py with MathConverter class
-- [ ] T084 [US4] Implement extract_omml() method in MathConverter (find oMath elements in document XML)
-- [ ] T085 [US4] Implement convert_omml_to_latex() method in MathConverter (XSLT-based conversion using lxml)
-- [ ] T086 [US4] Add OMML2MML.XSL transform handling in MathConverter (load Microsoft XSLT if available)
-- [ ] T087 [US4] Implement MathML-to-LaTeX parser in MathConverter (convert MathML intermediate to LaTeX string)
-- [ ] T088 [US4] Add conversion error handling in MathConverter (catch exceptions, log technical details)
-- [ ] T089 [US4] Update docx_parser.py to detect math elements in paragraphs
-- [ ] T090 [US4] Add _extract_math() method to docx_parser.py (create math block with OMML XML)
-- [ ] T091 [US4] Update extraction_service.py to convert math blocks (call MathConverter, handle failures)
-- [ ] T092 [US4] Add conversion failure warnings to DIJ metadata.warnings in extraction_service.py
+- [X] T083 [US4] Create backend/app/core/math_converter.py with MathConverter class
+- [X] T084 [US4] Implement extract_omml() method in MathConverter (find oMath elements in document XML)
+- [X] T085 [US4] Implement convert_omml_to_latex() method in MathConverter (XSLT-based conversion using lxml)
+- [X] T086 [US4] Add OMML2MML.XSL transform handling in MathConverter (load Microsoft XSLT if available)
+- [X] T087 [US4] Implement MathML-to-LaTeX parser in MathConverter (convert MathML intermediate to LaTeX string)
+- [X] T088 [US4] Add conversion error handling in MathConverter (catch exceptions, log technical details)
+- [X] T089 [US4] Update docx_parser.py to detect math elements in paragraphs
+- [X] T090 [US4] Add _extract_math() method to docx_parser.py (create math block with OMML XML)
+- [X] T091 [US4] Update extraction_service.py to convert math blocks (call MathConverter, handle failures)
+- [X] T092 [US4] Add conversion failure warnings to DIJ metadata.warnings in extraction_service.py
 
 ### Integration Tests for User Story 4
 
-- [ ] T093 [US4] Integration test: Extract with_math.docx → verify 90% LaTeX conversion success rate (SC-006) in backend/tests/integration/test_extract_docx_stage.py
-- [ ] T094 [US4] Integration test: Verify OMML preserved on conversion failures in backend/tests/integration/test_extract_docx_stage.py
-- [ ] T095 [US4] Integration test: Verify conversion_failed flag set correctly in backend/tests/integration/test_extract_docx_stage.py
+- [X] T093 [US4] Integration test: Extract with_math.docx → verify 90% LaTeX conversion success rate (SC-006) in backend/tests/integration/test_extract_docx_stage.py
+- [X] T094 [US4] Integration test: Verify OMML preserved on conversion failures in backend/tests/integration/test_extract_docx_stage.py
+- [X] T095 [US4] Integration test: Verify conversion_failed flag set correctly in backend/tests/integration/test_extract_docx_stage.py
 
 **Checkpoint**: Math conversion functional - All 4 user stories complete and independent
 

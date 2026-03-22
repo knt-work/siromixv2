@@ -18,13 +18,13 @@
 
 **Purpose**: Project initialization and dependencies
 
-- [ ] T001 Add python-docx>=1.1.0 and lxml>=5.0.0 to backend/pyproject.toml dependencies
-- [ ] T002 Install new dependencies in virtual environment: pip install python-docx lxml
-- [ ] T003 [P] Create test fixtures directory: backend/tests/fixtures/sample_exams/
-- [ ] T004 [P] Create simple_text.docx fixture with 5 paragraphs (plain and formatted text)
-- [ ] T005 [P] Create with_tables.docx fixture with 2 tables (simple and merged cells)
-- [ ] T006 [P] Create with_images.docx fixture with 3 embedded images (PNG, JPEG)
-- [ ] T007 [P] Create with_math.docx fixture with 4 OMML equations
+- [X] T001 Add python-docx>=1.1.0 and lxml>=5.0.0 to backend/pyproject.toml dependencies
+- [X] T002 Install new dependencies in virtual environment: pip install python-docx lxml
+- [X] T003 [P] Create test fixtures directory: backend/tests/fixtures/sample_exams/
+- [X] T004 [P] Create simple_text.docx fixture with 5 paragraphs (plain and formatted text)
+- [X] T005 [P] Create with_tables.docx fixture with 2 tables (simple and merged cells)
+- [X] T006 [P] Create with_images.docx fixture with 3 embedded images (PNG, JPEG)
+- [X] T007 [P] Create with_math.docx fixture with 4 OMML equations
 
 **Checkpoint**: Dependencies installed, test fixtures ready
 

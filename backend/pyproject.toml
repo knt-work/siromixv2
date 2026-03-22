@@ -38,6 +38,10 @@ dependencies = [
     # Object Storage
     "boto3>=1.34.0",  # S3-compatible storage client (AWS S3, MinIO)
     
+    # Document Processing
+    "python-docx>=1.1.0",  # DOCX file parsing and extraction
+    "lxml>=5.0.0",  # XML processing for OMML math conversion
+    
     # Utilities
     "python-dotenv>=1.0.0",  # Environment variable loading
 ]

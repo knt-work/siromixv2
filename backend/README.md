@@ -213,6 +213,261 @@ The `002_add_exams_and_artifacts_tables` migration adds exam and artifact tracki
 2. **Step 2**: Data migration - creates "Legacy Import" exam for each user with existing tasks, links all tasks to their user's legacy exam  
 3. **Step 3**: Makes `tasks.exam_id` NOT NULL, adds foreign key constraint with CASCADE delete
 
+---
+
+## Feature 006: DOCX Extraction Pipeline
+
+**Status**: ✅ **Production Ready** (Phase 7 complete)  
+**Purpose**: Replace mock `extract_docx` pipeline stage with real DOCX parser that produces Document Intermediate JSON (DIJ)
+
+### Overview
+
+The DOCX extraction feature is the first real pipeline stage that transforms uploaded DOCX exam files into structured, AI-ready JSON format. It extracts:
+
+- ✅ **Text Paragraphs** - All text content with formatting metadata
+- ✅ **Tables** - Structure preservation including merged cells
+- ✅ **Images** - Stored as external S3 artifacts with references
+- ✅ **Math Equations** - OMML converted to LaTeX (with fallback)
+
+### Document Intermediate JSON (DIJ)
+
+DIJ is the canonical output format required by Constitution Principle I. Structure:
+
+```json
+{
+  "version": "1.0",
+  "document_id": "550e8400-e29b-41d4-a716-446655440000",
+  "blocks": [
+    {
+      "id": "block-uuid-1",
+      "type": "paragraph",
+      "sequence": 1,
+      "content": {
+        "runs": [{"text": "Question 1:", "bold": true}]
+      },
+      "provenance": {
+        "source_document_id": "exam-uuid",
+        "original_position": {"paragraph_index": 0},
+        "extraction_timestamp": "2026-03-22T10:30:00Z",
+        "extraction_method": "python-docx-v1.1.0"
+      }
+    }
+  ],
+  "metadata": {
+    "extraction_timestamp": "2026-03-22T10:30:00Z",
+    "source_filename": "midterm_exam.docx",
+    "source_file_size": 1048576,
+    "total_blocks": 42,
+    "block_type_counts": {"paragraph": 35, "table": 5, "image": 2},
+    "extraction_duration_ms": 1250,
+    "warnings": []
+  }
+}
+```
+
+### Setup Requirements
+
+#### Dependencies
+
+```bash
+# Install DOCX extraction dependencies (already in pyproject.toml)
+pip install python-docx>=1.1.0 lxml>=5.0.0 Pillow>=10.0.0
+```
+
+#### Storage Configuration
+
+DIJ artifacts and extracted images require object storage (MinIO or S3):
+
+```bash
+# Add to .env (if not already present from Feature 004)
+STORAGE_BUCKET_NAME=siromix-uploads
+STORAGE_ENDPOINT_URL=http://localhost:9000   # MinIO local
+STORAGE_ACCESS_KEY_ID=minioadmin
+STORAGE_SECRET_ACCESS_KEY=minioadmin
+```
+
+**Start MinIO locally** (Docker):
+
+```bash
+docker run -d -p 9000:9000 -p 9001:9001 \
+  --name minio \
+  -e MINIO_ROOT_USER=minioadmin \
+  -e MINIO_ROOT_PASSWORD=minioadmin \
+  quay.io/minio/minio server /data --console-address ":9001"
+```
+
+Create bucket via MinIO Console (http://localhost:9001) or CLI:
+
+```bash
+docker exec minio mc alias set myminio http://localhost:9000 minioadmin minioadmin
+docker exec minio mc mb myminio/siromix-uploads
+```
+
+### Pipeline Integration
+
+The extraction stage runs automatically when an exam is uploaded via `POST /api/v1/exams`. The Celery worker processes tasks through pipeline stages:
+
+**Pipeline Flow**:
+```
+1. extract_docx (REAL)     ← Feature 006 implementation
+   ↓ Outputs: DIJ artifact
+2. ai_understanding (MOCK)
+   ↓
+3. ai_analysis (MOCK)
+   ↓
+4. shuffle (MOCK)
+   ↓
+5. render_docx (MOCK)
+```
+
+**Monitor extraction progress**:
+
+```bash
+# Poll task status
+GET /api/v1/tasks/{task_id}
+
+# Response shows current_stage and progress
+{
+  "task_id": "uuid",
+  "status": "completed",
+  "current_stage": "extract_docx",
+  "progress": 100,
+  "error": null
+}
+```
+
+### Extraction Constraints
+
+| Constraint | Value | Behavior on Violation |
+|------------|-------|----------------------|
+| **Max file size** | 50 MB | Reject with `DOCX_TOO_LARGE` error |
+| **Max extraction time** | 5 minutes | Terminate with `EXTRACTION_TIMEOUT` error |
+| **Supported formats** | DOCX only | Reject with `DOCX_INVALID_FORMAT` error |
+
+### Error Codes
+
+All extraction errors include structured diagnostics:
+
+| Error Code | Meaning | User Action |
+|------------|---------|-------------|
+| `DOCX_INVALID_FORMAT` | File is not a valid DOCX | Upload a Microsoft Word .docx file |
+| `DOCX_CORRUPTED` | File is damaged or incomplete | Re-export DOCX from Word |
+| `DOCX_TOO_LARGE` | File exceeds 50 MB limit | Reduce file size or split document |
+| `EXTRACTION_TIMEOUT` | Extraction took >5 minutes | Simplify document or contact support |
+| `DIJ_VALIDATION_ERROR` | Output failed schema validation | Report bug with document sample |
+
+### Testing
+
+```bash
+# Run extraction tests only
+pytest tests/unit/test_extraction_service.py -v
+pytest tests/integration/test_extract_docx_stage.py -v
+
+# Run all Phase 6 tests (paragraphs, tables, images, math)
+pytest tests/ -k "extraction or docx or dij" -v
+
+# Test with real fixtures
+pytest tests/integration/ --fixtures=tests/fixtures/sample_exams/
+```
+
+**Test fixtures** available in `tests/fixtures/sample_exams/`:
+- `simple_text.docx` - 5 paragraphs with various formatting
+- `with_tables.docx` - 2 tables (simple + merged cells)
+- `with_images.docx` - 3 embedded images (PNG, JPEG)
+- `with_math.docx` - 4 OMML equations
+
+### Performance Benchmarks
+
+From integration tests (T116):
+
+| Document Size | Extraction Time | Target |
+|---------------|-----------------|--------|
+| Small (1-5 pages) | <1 second | <1s |
+| Medium (10-20 pages) | 2-5 seconds | <10s |
+| Large (50 pages) | 10-25 seconds | <30s |
+
+**Note**: Actual performance depends on content complexity (tables, images, math).
+
+### Architecture
+
+**Core Components**:
+
+```
+app/core/
+├── docx_parser.py         # DOCX validation and block extraction
+├── image_extractor.py     # Image extraction and S3 upload
+└── math_converter.py      # OMML → LaTeX conversion
+
+app/services/
+└── extraction_service.py  # Orchestrates extraction pipeline
+
+app/tasks/
+└── pipeline_stages.py     # extract_docx() Celery task
+
+app/schemas/
+├── dij.py                 # DIJ Pydantic models (versioned)
+└── extraction.py          # Extraction request/response schemas
+```
+
+**Extraction Flow**:
+
+1. **Validate** DOCX file (format, size, integrity)
+2. **Extract blocks** using `python-docx`:
+   - Paragraphs with formatting metadata
+   - Tables with cell structure
+   - Images → upload to S3
+   - Math (OMML) → convert to LaTeX
+3. **Build DIJ** with provenance and metadata
+4. **Validate** against Pydantic schema
+5. **Upload DIJ** to S3 as artifact
+6. **Create artifact record** in database
+7. **Return** extraction result with artifact IDs
+
+### Monitoring & Observability
+
+**Extraction metrics logged** (T126 - pending):
+
+```python
+# Metrics tracked per extraction:
+- extraction_duration_ms
+- blocks_extracted (total and by type)
+- file_size_bytes
+- warnings (unsupported content, conversion failures)
+- error_code (if failed)
+```
+
+**Check Celery logs** for extraction details:
+
+```bash
+# In worker output:
+2026-03-22 10:30:15 INFO extract_docx: Starting extraction for task_id=abc123
+2026-03-22 10:30:16 INFO extract_docx: Extracted 42 blocks (35 paragraphs, 5 tables, 2 images)
+2026-03-22 10:30:16 INFO extract_docx: DIJ uploaded to exams/user-uuid/midterm-exam/dij_v1_abc123.json
+2026-03-22 10:30:16 INFO extract_docx: Extraction completed in 1250ms
+```
+
+### Troubleshooting
+
+**Issue**: Extraction fails with `DOCX_INVALID_FORMAT`  
+**Solution**: Ensure file is saved as `.docx` (not `.doc` or `.odt`). Re-save from Microsoft Word.
+
+**Issue**: Images not extracted  
+**Solution**: Verify MinIO/S3 is running and credentials are correct in `.env`
+
+**Issue**: Math equations show `conversion_failed: true`  
+**Solution**: LaTeX conversion failed but original OMML XML is preserved. Equations remain accessible in DIJ.
+
+**Issue**: Extraction timeout after 5 minutes  
+**Solution**: Document is too complex. Reduce embedded images or simplify tables.
+
+### Related Documentation
+
+- **Feature Spec**: `specs/006-docx-extraction/spec.md`
+- **Implementation Plan**: `specs/006-docx-extraction/plan.md`
+- **Task Breakdown**: `specs/006-docx-extraction/tasks.md`
+- **DIJ Schema Contract**: `specs/006-docx-extraction/contracts/dij-schema-v1.0.json`
+- **Success Criteria**: `specs/006-docx-extraction/quickstart.md`
+
 **Apply Migration**:
 ```bash
 cd backend

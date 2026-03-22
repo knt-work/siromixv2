@@ -9,9 +9,15 @@ import logging
 import os
 import signal
 import sys
+from pathlib import Path
 
 from celery import Celery
 from celery.signals import worker_shutdown
+from dotenv import load_dotenv
+
+# Load environment variables from .env file (same as main.py)
+env_path = Path(__file__).parent.parent.parent / '.env'
+load_dotenv(dotenv_path=env_path)
 
 logger = logging.getLogger(__name__)
 

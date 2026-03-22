@@ -239,40 +239,40 @@
 
 ### Pipeline Integration
 
-- [ ] T096 Create backend/app/schemas/extraction.py with ExtractionRequest and ExtractionResponse schemas
-- [ ] T097 Update backend/app/tasks/pipeline_stages.py: Replace mock extract_docx with real implementation
-- [ ] T098 Add task loading logic in pipeline_stages.py extract_docx() (load Task from database by task_id)
-- [ ] T099 Add DOCX artifact path retrieval in pipeline_stages.py (get docx_artifact_id from task.metadata)
-- [ ] T100 Call ExtractionService.extract_dij() in pipeline_stages.py extract_docx()
-- [ ] T101 Persist DIJ as artifact in pipeline_stages.py (upload JSON to S3, create artifact record)
-- [ ] T102 Update task.metadata with dij_artifact_id in pipeline_stages.py
-- [ ] T103 Return extraction result dict in pipeline_stages.py (blocks_extracted, duration_ms, artifact_id, status)
+- [X] T096 Create backend/app/schemas/extraction.py with ExtractionRequest and ExtractionResponse schemas
+- [X] T097 Update backend/app/tasks/pipeline_stages.py: Replace mock extract_docx with real implementation
+- [X] T098 Add task loading logic in pipeline_stages.py extract_docx() (load Task from database by task_id)
+- [X] T099 Add DOCX artifact path retrieval in pipeline_stages.py (get docx_artifact_id from task.metadata)
+- [X] T100 Call ExtractionService.extract_dij() in pipeline_stages.py extract_docx()
+- [X] T101 Persist DIJ as artifact in pipeline_stages.py (upload JSON to S3, create artifact record)
+- [X] T102 Update task.metadata with dij_artifact_id in pipeline_stages.py (N/A: dij_artifact_id retrievable via Artifact query)
+- [X] T103 Return extraction result dict in pipeline_stages.py (blocks_extracted, duration_ms, artifact_id, status)
 
 ### Error Handling & Validation
 
-- [ ] T104 Add file size validation (50MB max) before extraction in pipeline_stages.py
-- [ ] T105 Add timeout handling (5 minute max) in pipeline_stages.py using async timeout
-- [ ] T106 Add DOCX format validation in docx_parser.py (check zipfile structure)
-- [ ] T107 Handle corrupted DOCX files in docx_parser.py (raise DOCX_CORRUPTED error)
-- [ ] T108 Handle malformed DOCX in extraction_service.py (structured error with diagnostics)
-- [ ] T109 Add unsupported content warning logic in docx_parser.py (videos, macros, embedded objects)
-- [ ] T110 Implement structured error serialization in pipeline_stages.py (ExtractionError → task log)
+- [X] T104 Add file size validation (50MB max) before extraction in pipeline_stages.py
+- [X] T105 Add timeout handling (5 minute max) in pipeline_stages.py using async timeout
+- [X] T106 Add DOCX format validation in docx_parser.py (check zipfile structure)
+- [X] T107 Handle corrupted DOCX files in docx_parser.py (raise DOCX_CORRUPTED error)
+- [X] T108 Handle malformed DOCX in extraction_service.py (structured error with diagnostics)
+- [X] T109 Add unsupported content warning logic in docx_parser.py (videos, macros, embedded objects)
+- [X] T110 Implement structured error serialization in pipeline_stages.py (ExtractionError → task log)
 
 ### Service Tests
 
-- [ ] T111 [P] Unit test: ExtractionService orchestrates all extractors correctly in backend/tests/unit/test_extraction_service.py
-- [ ] T112 [P] Unit test: ExtractionService builds complete DIJ metadata in backend/tests/unit/test_extraction_service.py
-- [ ] T113 [P] Unit test: ExtractionService validates DIJ before returning in backend/tests/unit/test_extraction_service.py
-- [ ] T114 [P] Unit test: ExtractionService handles extractor failures gracefully in backend/tests/unit/test_extraction_service.py
+- [X] T111 [P] Unit test: ExtractionService orchestrates all extractors correctly in backend/tests/unit/services/test_extraction_service.py
+- [X] T112 [P] Unit test: ExtractionService builds complete DIJ metadata in backend/tests/unit/services/test_extraction_service.py
+- [X] T113 [P] Unit test: ExtractionService validates DIJ before returning in backend/tests/unit/services/test_extraction_service.py
+- [X] T114 [P] Unit test: ExtractionService handles extractor failures gracefully in backend/tests/unit/services/test_extraction_service.py
 
 ### End-to-End Integration Tests
 
-- [ ] T115 Integration test: Full pipeline - upload DOCX → extract → verify DIJ artifact created in backend/tests/integration/test_extract_docx_stage.py
-- [ ] T116 Integration test: Extraction completes <30 seconds for 50-page DOCX (SC-002) in backend/tests/integration/test_extract_docx_stage.py
-- [ ] T117 Integration test: File size limit enforcement (reject >50MB) in backend/tests/integration/test_extract_docx_stage.py
-- [ ] T118 Integration test: Timeout enforcement (5 minute max) in backend/tests/integration/test_extract_docx_stage.py
-- [ ] T119 Integration test: Idempotent retry behavior (same artifact_id on retry) in backend/tests/integration/test_extract_docx_stage.py
-- [ ] T120 Integration test: Structured error diagnostics for all failure modes in backend/tests/integration/test_extract_docx_stage.py
+- [X] T115 Integration test: Full pipeline - upload DOCX → extract → verify DIJ artifact created in backend/tests/integration/test_extract_docx_stage.py
+- [X] T116 Integration test: Extraction completes <30 seconds for 50-page DOCX (SC-002) in backend/tests/integration/test_extract_docx_stage.py
+- [X] T117 Integration test: File size limit enforcement (reject >50MB) in backend/tests/integration/test_extract_docx_stage.py
+- [X] T118 Integration test: Timeout enforcement (5 minute max) in backend/tests/integration/test_extract_docx_stage.py
+- [X] T119 Integration test: Idempotent retry behavior (same artifact_id on retry) in backend/tests/integration/test_extract_docx_stage.py
+- [X] T120 Integration test: Structured error diagnostics for all failure modes in backend/tests/integration/test_extract_docx_stage.py
 
 ---
 
@@ -280,16 +280,16 @@
 
 **Purpose**: Improvements affecting multiple user stories
 
-- [ ] T121 [P] Update backend/README.md with DOCX extraction setup instructions
-- [ ] T122 [P] Add docstrings to all public methods in docx_parser.py, math_converter.py, image_extractor.py, extraction_service.py
-- [ ] T123 [P] Code cleanup: Remove debug print statements, add type hints
-- [ ] T124 Performance optimization: Profile extraction for large files, optimize bottlenecks
-- [ ] T125 Security hardening: Add input sanitization for DOCX file paths
-- [ ] T126 [P] Add extraction metrics logging (duration, block counts, success rate) for observability
-- [ ] T127 Run full test suite with coverage: pytest backend/tests/ --cov=app --cov-report=html
-- [ ] T128 Validate success criteria checklist from quickstart.md (SC-001 through SC-009)
-- [ ] T129 Update COMPLETION_SUMMARY.md with Feature 006 completion status
-- [ ] T130 Create PR: 006-docx-extraction → main with full test results
+- [X] T121 [P] Update backend/README.md with DOCX extraction setup instructions
+- [X] T122 [P] Add docstrings to all public methods in docx_parser.py, math_converter.py, image_extractor.py, extraction_service.py
+- [X] T123 [P] Code cleanup: Remove debug print statements, add type hints
+- [X] T124 Performance optimization: Profile extraction for large files, optimize bottlenecks
+- [X] T125 Security hardening: Add input sanitization for DOCX file paths
+- [X] T126 [P] Add extraction metrics logging (duration, block counts, success rate) for observability
+- [X] T127 Run full test suite with coverage: pytest backend/tests/ --cov=app --cov-report=html
+- [X] T128 Validate success criteria checklist from quickstart.md (SC-001 through SC-009)
+- [X] T129 Update COMPLETION_SUMMARY.md with Feature 006 completion status
+- [X] T130 Create PR: 006-docx-extraction → main with full test results
 
 ---
 

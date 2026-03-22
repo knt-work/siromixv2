@@ -103,6 +103,26 @@ class ExtractionService:
             # Get file size for metadata (safe after validation)
             source_file_size = file_path.stat().st_size
             
+            # T108: Open document with malformed DOCX handling
+            try:
+                document = self.parser.open_document(file_path)
+            except ExtractionError as e:
+                # Re-raise with additional context for malformed DOCX
+                if e.error_code == ErrorCode.DOCX_CORRUPTED or e.error_code == ErrorCode.DOCX_INVALID_FORMAT:
+                    raise ExtractionError(
+                        error_code=e.error_code,
+                        technical_details=f"Malformed DOCX: {e.technical_details}",
+                        original_exception=e.original_exception,
+                        file_path=str(file_path),
+                        context={
+                            "stage": "document_opening",
+                            "source_filename": source_filename,
+                            "file_size": source_file_size
+                        }
+                    ) from e
+                else:
+                    raise
+            
             # Extract all blocks using parser
             blocks_data = self.parser.extract_blocks(
                 file_path=file_path,
@@ -122,6 +142,10 @@ class ExtractionService:
             
             # Process math blocks: convert OMML to LaTeX (Phase 6 - T091)
             blocks_data = self._process_math_blocks(blocks_data)
+            
+            # Collect warnings from parser (T109 - unsupported content)
+            if self.parser.warnings:
+                self.warnings.extend(self.parser.warnings)
             
             # Convert block dictionaries to Block objects
             blocks = [Block(**block_data) for block_data in blocks_data]

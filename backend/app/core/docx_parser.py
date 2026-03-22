@@ -115,6 +115,7 @@ class DocxParser:
         """Initialize parser with default configuration"""
         self.max_file_size = MAX_FILE_SIZE_BYTES
         self.extraction_timeout = EXTRACTION_TIMEOUT_SECONDS
+        self.warnings: list[str] = []  # Collect warnings during extraction (e.g., unsupported content)
     
     def validate_docx(self, file_path: str | Path) -> None:
         """
@@ -132,11 +133,11 @@ class DocxParser:
             ValidationError: If any validation check fails
         
         Example:
+            parser = DocxParser()
             try:
                 parser.validate_docx("exam.docx")
             except ValidationError as e:
-                print(f"Validation failed: {e.user_message}")
-                print(f"Error code: {e.error_code}")
+                logger.error(f"Validation failed: {e.error_code}")
         """
         file_path = Path(file_path)
         
@@ -166,7 +167,7 @@ class DocxParser:
                 max_size=self.max_file_size
             )
         
-        # Check 3: Valid DOCX/ZIP structure
+        # Check 3: Valid DOCX/ZIP structure and detect unsupported content (T109)
         try:
             # DOCX is a ZIP archive - verify it can be opened
             with ZipFile(file_path, 'r') as zip_file:
@@ -182,6 +183,28 @@ class DocxParser:
                         file_path=str(file_path),
                         missing_components=missing_files
                     )
+                
+                # T109: Detect unsupported content (videos, macros, complex embedded objects)
+                # Reset warnings for this validation
+                self.warnings = []
+                
+                # Check for videos (common video extensions in media folder)
+                video_files = [
+                    f for f in namelist
+                    if f.startswith('word/media/') and 
+                    any(f.lower().endswith(ext) for ext in ['.mp4', '.avi', '.wmv', '.mov', '.mpeg', '.flv', '.mkv'])
+                ]
+                if video_files:
+                    self.warnings.append(f"Document contains {len(video_files)} video(s) which cannot be extracted")
+                
+                # Check for macros (VBA project binary)
+                if 'word/vbaProject.bin' in namelist:
+                    self.warnings.append("Document contains VBA macros which cannot be extracted")
+                
+                # Check for OLE objects (embedded files like Excel, PDF, etc.)
+                ole_objects = [f for f in namelist if 'embeddings/' in f or f.startswith('word/embeddings/')]
+                if ole_objects:
+                    self.warnings.append(f"Document contains {len(ole_objects)} embedded object(s) which cannot be extracted")
         
         except BadZipFile as e:
             raise ValidationError(

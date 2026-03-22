@@ -123,6 +123,28 @@ class StorageClient:
         except (BotoCoreError, ClientError):
             raise
 
+    def download_file(self, file_path: str) -> bytes:
+        """
+        Download file from object storage.
+
+        Args:
+            file_path: File path within bucket
+
+        Returns:
+            File content as bytes
+
+        Raises:
+            ClientError: If download fails (file not found, network error, permissions)
+        """
+        try:
+            response = self.s3_client.get_object(
+                Bucket=self.bucket_name,
+                Key=file_path
+            )
+            return response["Body"].read()
+        except (BotoCoreError, ClientError):
+            raise
+
     def file_exists(self, file_path: str) -> bool:
         """
         Check if file exists in storage.

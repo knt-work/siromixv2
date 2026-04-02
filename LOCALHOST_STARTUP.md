@@ -1,5 +1,502 @@
 # SiroMix V2 - Local Development Startup Guide
 
+> **Single Source of Truth**: This guide works across ALL features. Follow these steps to start the complete local development environment.
+
+## 📋 Table of Contents
+
+1. [Prerequisites](#prerequisites)
+2. [One-Time Setup](#one-time-setup)
+3. [Starting Development Environment](#starting-development-environment)
+4. [Verification Steps](#verification-steps)
+5. [Stopping Services](#stopping-services)
+6. [Troubleshooting](#troubleshooting)
+
+---
+
+## Prerequisites
+
+### Required Software
+
+- **Python 3.11+** - Backend runtime
+- **Node.js 18+** - Frontend runtime
+- **Docker Desktop** - Infrastructure (PostgreSQL, Redis, MinIO)
+- **Git** - Version control
+
+### Verify Installations
+
+```powershell
+# PowerShell (Windows)
+python --version          # Should show 3.11+
+node --version            # Should show 18+
+docker --version          # Should show Docker version
+docker compose version    # Should show Docker Compose version
+```
+
+---
+
+## One-Time Setup
+
+### 1. Clone Repository
+
+```powershell
+git clone <repository-url>
+cd siromixv2
+```
+
+### 2. Configure Environment Variables
+
+#### Infrastructure Environment (.env)
+
+```powershell
+# Copy infrastructure environment template
+cd infra
+Copy-Item .env.example .env
+
+# Edit .env and set your Google OAuth credentials:
+# - GOOGLE_CLIENT_ID (from Google Cloud Console)
+# - GOOGLE_CLIENT_SECRET (from Google Cloud Console)
+# - NEXTAUTH_SECRET (generate with: openssl rand -base64 32)
+```
+
+**📝 Important**: Get Google OAuth credentials from [Google Cloud Console](https://console.cloud.google.com/):
+1. Create OAuth 2.0 Client ID
+2. Set authorized redirect URI: `http://localhost:3000/api/auth/callback/google`
+3. Copy Client ID and Client Secret to `infra/.env`
+
+#### Backend Environment (.env)
+
+```powershell
+# Copy backend environment template
+cd ..\backend
+Copy-Item .env.example .env
+
+# Update GOOGLE_CLIENT_ID in backend/.env (same as infra/.env)
+# All other defaults are fine for local development
+```
+
+### 3. Install Backend Dependencies
+
+```powershell
+# From siromixv2/backend directory
+python -m venv .venv
+
+# Activate virtual environment
+.\.venv\Scripts\Activate.ps1
+
+# Install dependencies
+pip install -e ".[dev]"
+```
+
+### 4. Install Frontend Dependencies
+
+```powershell
+# From siromixv2/frontend directory
+cd ..\frontend
+npm install
+```
+
+---
+
+## Starting Development Environment
+
+### Option 1: Docker Compose (Recommended) 🐋
+
+**✅ Best for**: Full-stack development with all services (database, storage, workers)
+
+```powershell
+# From siromixv2/infra directory
+cd infra
+docker compose up
+
+# Or run in background:
+docker compose up -d
+
+# View logs:
+docker compose logs -f
+```
+
+**This starts:**
+- ✅ PostgreSQL (port 5432)
+- ✅ Redis (port 6379)
+- ✅ MinIO S3 Storage (ports 9000, 9001)
+- ✅ Backend API (port 8000)
+- ✅ Celery Worker
+- ✅ Frontend (port 3000)
+
+**First-time setup**: Database migrations run automatically when backend container starts.
+
+---
+
+### Option 2: Manual Startup (Infrastructure Only)
+
+**✅ Best for**: Backend/Frontend development with code hot-reload
+
+#### Step 1: Start Infrastructure Services
+
+```powershell
+# From siromixv2/infra directory
+docker compose up db redis minio minio-setup
+```
+
+#### Step 2: Run Database Migrations (First Time Only)
+
+```powershell
+# From siromixv2/backend directory (with .venv activated)
+alembic upgrade head
+```
+
+#### Step 3: Start Backend API
+
+```powershell
+# Terminal 1 - Backend API
+cd backend
+.\.venv\Scripts\Activate.ps1
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+#### Step 4: Start Celery Worker
+
+```powershell
+# Terminal 2 - Celery Worker (for background tasks)
+cd backend
+.\.venv\Scripts\Activate.ps1
+celery -A app.tasks.celery_app worker --loglevel=info --pool=solo
+```
+
+**Note**: On Windows, use `--pool=solo` for Celery worker.
+
+#### Step 5: Start Frontend
+
+```powershell
+# Terminal 3 - Frontend
+cd frontend
+npm run dev
+```
+
+---
+
+### Option 3: Quick Start (Infrastructure + Manual App)
+
+**✅ Best for**: Quick testing without full Docker rebuild
+
+```powershell
+# Terminal 1: Infrastructure only
+cd infra
+docker compose up db redis minio minio-setup
+
+# Terminal 2: Backend (after infrastructure is healthy)
+cd backend
+.\.venv\Scripts\Activate.ps1
+uvicorn app.main:app --reload
+
+# Terminal 3: Celery Worker
+cd backend
+.\.venv\Scripts\Activate.ps1
+celery -A app.tasks.celery_app worker --loglevel=info --pool=solo
+
+# Terminal 4: Frontend
+cd frontend
+npm run dev
+```
+
+---
+
+## Verification Steps
+
+### 1. Check Service Health
+
+| Service | URL | Expected Response |
+|---------|-----|-------------------|
+| **Backend API** | http://localhost:8000 | `{"message": "SiroMix V2 API"}` |
+| **API Docs** | http://localhost:8000/docs | Interactive API documentation |
+| **Frontend** | http://localhost:3000 | SiroMix login page |
+| **MinIO Console** | http://localhost:9001 | MinIO login (minioadmin/minioadmin) |
+| **PostgreSQL** | localhost:5432 | Use `psql` or DB client |
+
+### 2. Verify Database Connection
+
+```powershell
+# From backend directory (with .venv activated)
+python -c "from app.core.database import engine; import asyncio; asyncio.run(engine.connect())"
+# Should complete without errors
+```
+
+### 3. Verify MinIO Bucket
+
+1. Open http://localhost:9001
+2. Login: `minioadmin` / `minioadmin`
+3. Verify bucket `siromix-exams` exists
+
+### 4. Test Authentication Flow
+
+1. Open http://localhost:3000
+2. Click "Sign in with Google"
+3. Complete OAuth flow
+4. Verify you're redirected to dashboard
+
+### 5. Check Docker Services (if using Docker)
+
+```powershell
+# From infra directory
+docker compose ps
+
+# All services should show "running" or "healthy"
+```
+
+---
+
+## Stopping Services
+
+### Stop Docker Compose
+
+```powershell
+# From infra directory
+docker compose down
+
+# Stop and remove volumes (⚠️ deletes all data):
+docker compose down -v
+```
+
+### Stop Manual Services
+
+Press `Ctrl+C` in each terminal running:
+- Backend API
+- Celery Worker
+- Frontend dev server
+
+Infrastructure services (if started separately):
+```powershell
+docker compose down
+```
+
+---
+
+## Troubleshooting
+
+### Backend Won't Start
+
+**Problem**: `ImportError` or `ModuleNotFoundError`
+
+**Solution**:
+```powershell
+cd backend
+.\.venv\Scripts\Activate.ps1
+pip install -e ".[dev]"
+```
+
+---
+
+### Database Connection Errors
+
+**Problem**: `connection refused` or `database does not exist`
+
+**Solution**:
+```powershell
+# Ensure PostgreSQL is running:
+docker compose ps db
+
+# Check database exists:
+docker compose exec db psql -U siromix -d siromix_v2 -c "SELECT 1;"
+
+# Run migrations:
+cd backend
+alembic upgrade head
+```
+
+---
+
+### MinIO Bucket Missing
+
+**Problem**: `NoSuchBucket` or artifact upload fails
+
+**Solution**:
+```powershell
+# Ensure minio-setup container ran:
+docker compose logs minio-setup
+
+# Manually create bucket:
+docker compose exec minio mc mb /data/siromix-exams
+```
+
+---
+
+### Frontend Build Errors
+
+**Problem**: React/TypeScript compilation errors
+
+**Solution**:
+```powershell
+cd frontend
+rm -rf node_modules .next
+npm install
+npm run dev
+```
+
+---
+
+### Port Already in Use
+
+**Problem**: `Address already in use` on port 8000, 3000, 5432, etc.
+
+**Solution**:
+```powershell
+# Find process using port (e.g., 8000):
+netstat -ano | findstr :8000
+
+# Kill process by PID:
+taskkill /PID <pid> /F
+
+# Or change port in configuration
+```
+
+---
+
+### Celery Worker Won't Start (Windows)
+
+**Problem**: `ValueError: not enough values to unpack`
+
+**Solution**: Use `--pool=solo` flag:
+```powershell
+celery -A app.tasks.celery_app worker --loglevel=info --pool=solo
+```
+
+---
+
+### Google OAuth Errors
+
+**Problem**: `redirect_uri_mismatch` or OAuth fails
+
+**Solution**:
+1. Verify Google Cloud Console OAuth settings:
+   - Authorized redirect URI: `http://localhost:3000/api/auth/callback/google`
+2. Verify `GOOGLE_CLIENT_ID` matches in both:
+   - `infra/.env`
+   - `backend/.env`
+3. Restart frontend after changing `.env`:
+   ```powershell
+   # Stop frontend (Ctrl+C)
+   npm run dev
+   ```
+
+---
+
+### Docker Compose Fails to Start
+
+**Problem**: `network not found` or `volume not found`
+
+**Solution**:
+```powershell
+# Clean up and restart:
+docker compose down -v
+docker compose up
+```
+
+---
+
+## Development Workflow
+
+### Running Tests
+
+```powershell
+# Backend tests
+cd backend
+.\.venv\Scripts\Activate.ps1
+pytest
+
+# Frontend tests
+cd frontend
+npm test
+```
+
+### Database Migrations
+
+```powershell
+# Create new migration
+cd backend
+alembic revision --autogenerate -m "Description"
+
+# Apply migrations
+alembic upgrade head
+
+# Rollback
+alembic downgrade -1
+```
+
+### Accessing Logs
+
+```powershell
+# Docker logs (all services)
+docker compose logs -f
+
+# Specific service
+docker compose logs -f backend
+
+# Backend logs (manual mode)
+# Shown in terminal where uvicorn is running
+
+# Frontend logs (manual mode)
+# Shown in terminal where npm run dev is running
+```
+
+---
+
+## Quick Reference
+
+### Common Commands
+
+```powershell
+# Start everything (Docker)
+cd infra && docker compose up
+
+# Start infrastructure only
+cd infra && docker compose up db redis minio minio-setup
+
+# Backend development
+cd backend && .\.venv\Scripts\Activate.ps1 && uvicorn app.main:app --reload
+
+# Frontend development  
+cd frontend && npm run dev
+
+# Run tests
+cd backend && pytest
+cd frontend && npm test
+
+# Database migration
+cd backend && alembic upgrade head
+```
+
+### Default Ports
+
+| Service | Port |
+|---------|------|
+| Frontend | 3000 |
+| Backend API | 8000 |
+| PostgreSQL | 5432 |
+| Redis | 6379 |
+| MinIO API | 9000 |
+| MinIO Console | 9001 |
+
+### Default Credentials
+
+| Service | Username | Password |
+|---------|----------|----------|
+| PostgreSQL | siromix | siromix_dev_password |
+| MinIO | minioadmin | minioadmin |
+
+---
+
+## Next Steps
+
+✅ Environment is running → Start developing!
+
+- Backend API docs: http://localhost:8000/docs
+- Frontend: http://localhost:3000
+- View specific feature documentation in `specs/<feature-name>/quickstart.md`
+
+---
+
+**Need Help?** Check project-specific documentation in the `specs/` directory or consult the team.
+
 ## Quick Start (One Command for Everything)
 
 This guide provides **ONE consistent way** to start all services for local development that works for all phases of Feature 004 and future features.

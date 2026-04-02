@@ -17,7 +17,6 @@ import logging
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import AsyncSessionLocal
 from app.models.task import Task
 from app.models.exam import Exam
 from app.models.artifact import Artifact, ArtifactType
@@ -56,7 +55,8 @@ def _extract_dij_sync(temp_path: Path, task: Task, exam: Exam):
 
 async def extract_docx(
     task_id: str,
-    simulate_failure: bool = False
+    simulate_failure: bool = False,
+    db: AsyncSession | None = None,
 ) -> dict[str, Any]:
     """
     Stage 1: Extract document structure from DOCX (Phase 7 - T097-T103).
@@ -95,193 +95,195 @@ async def extract_docx(
     # Convert task_id string to UUID
     task_uuid = UUID(task_id)
     
-    # Create async database session (T098)
-    async with AsyncSessionLocal() as db:
+    if db is None:
+        raise ValueError("db session is required for extract_docx")
+
+    try:
+        # Load Task from database (T098)
+        result = await db.execute(
+            select(Task).where(Task.task_id == task_uuid)
+        )
+        task = result.scalar_one_or_none()
+
+        if not task:
+            raise ValueError(f"Task not found: {task_id}")
+
+        # Load Exam to get DOCX artifact path (T099)
+        exam_result = await db.execute(
+            select(Exam).where(Exam.exam_id == task.exam_id)
+        )
+        exam = exam_result.scalar_one_or_none()
+
+        if not exam:
+            raise ValueError(f"Exam not found: {task.exam_id}")
+
+        # Get DOCX artifact path from storage
+        # For MVP, reconstruct the path using the same logic as exam upload
+        # Pattern: exams/{user_id}/{exam-name-kebab}/original.docx
+        from app.core.artifact_paths import generate_artifact_path
+
+        storage_path = generate_artifact_path(
+            user_id=task.user_id,
+            exam_name=exam.name,
+            filename="original.docx"
+        )
+
+        logger.info(f"Extracting DOCX for task {task_id}, storage_path: {storage_path}")
+
+        # Download DOCX from S3 to temporary file
+        storage = StorageClient()
+        import tempfile
+        temp_dir = Path(tempfile.gettempdir())
+        temp_path = temp_dir / f"exam_{task.exam_id}.docx"
+
         try:
-            # Load Task from database
-            result = await db.execute(
-                select(Task).where(Task.task_id == task_uuid)
+            file_data = storage.download_file(storage_path)
+
+            # File size validation (T104) - 50MB max
+            MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB in bytes
+            file_size = len(file_data)
+
+            if file_size > MAX_FILE_SIZE:
+                raise ExtractionError(
+                    message=f"File size ({file_size / 1024 / 1024:.1f}MB) exceeds maximum allowed size (50MB)",
+                    error_code=ErrorCode.DOCX_TOO_LARGE,
+                    details={"file_size_bytes": file_size, "max_size_bytes": MAX_FILE_SIZE}
+                )
+
+            temp_path.write_bytes(file_data)
+
+            logger.info(f"Downloaded DOCX to {temp_path}, size: {len(file_data)} bytes")
+
+            # Timeout handling (T105) - 5 minute max
+            EXTRACTION_TIMEOUT = 5 * 60  # 5 minutes in seconds
+
+            try:
+                # Wrap extraction in async timeout
+                extraction_task = asyncio.create_task(
+                    asyncio.to_thread(
+                        _extract_dij_sync,
+                        temp_path,
+                        task,
+                        exam
+                    )
+                )
+
+                dij, warnings = await asyncio.wait_for(extraction_task, timeout=EXTRACTION_TIMEOUT)
+
+            except asyncio.TimeoutError:
+                raise ExtractionError(
+                    message=f"Extraction exceeded maximum timeout ({EXTRACTION_TIMEOUT / 60:.0f} minutes)",
+                    error_code=ErrorCode.EXTRACTION_TIMEOUT,
+                    details={"timeout_seconds": EXTRACTION_TIMEOUT}
+                )
+
+            logger.info(
+                f"DIJ extracted successfully: {len(dij.blocks)} blocks, "
+                f"{len(warnings)} warnings"
             )
-            task = result.scalar_one_or_none()
-            
-            if not task:
-                raise ValueError(f"Task not found: {task_id}")
-            
-            # Load Exam to get DOCX artifact path (T099)
-            exam_result = await db.execute(
-                select(Exam).where(Exam.exam_id == task.exam_id)
-            )
-            exam = exam_result.scalar_one_or_none()
-            
-            if not exam:
-                raise ValueError(f"Exam not found: {task.exam_id}")
-            
-            # Get DOCX artifact path from storage
-            # For MVP, reconstruct the path using the same logic as exam upload
-            # Pattern: exams/{user_id}/{exam-name-kebab}/original.docx
-            from app.core.artifact_paths import generate_artifact_path
-            
-            storage_path = generate_artifact_path(
+
+            # Convert DIJ to JSON for storage
+            dij_json = dij.model_dump_json(indent=2)
+
+            # Persist DIJ as S3 artifact (T101)
+            dij_storage_path = generate_artifact_path(
                 user_id=task.user_id,
                 exam_name=exam.name,
-                filename="original.docx"
+                filename=f"dij_v1_{task_id}.json"
             )
-            
-            logger.info(f"Extracting DOCX for task {task_id}, storage_path: {storage_path}")
-            
-            # Download DOCX from S3 to temporary file
-            storage = StorageClient()
-            import tempfile
-            temp_dir = Path(tempfile.gettempdir())
-            temp_path = temp_dir / f"exam_{task.exam_id}.docx"
-            
-            try:
-                file_data = storage.download_file(storage_path)
-                
-                # File size validation (T104) - 50MB max
-                MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB in bytes
-                file_size = len(file_data)
-                
-                if file_size > MAX_FILE_SIZE:
-                    raise ExtractionError(
-                        message=f"File size ({file_size / 1024 / 1024:.1f}MB) exceeds maximum allowed size (50MB)",
-                        error_code=ErrorCode.DOCX_TOO_LARGE,
-                        details={"file_size_bytes": file_size, "max_size_bytes": MAX_FILE_SIZE}
-                    )
-                
-                temp_path.write_bytes(file_data)
-                
-                logger.info(f"Downloaded DOCX to {temp_path}, size: {len(file_data)} bytes")
-                
-                # Timeout handling (T105) - 5 minute max
-                EXTRACTION_TIMEOUT = 5 * 60  # 5 minutes in seconds
-                
-                try:
-                    # Wrap extraction in async timeout
-                    extraction_task = asyncio.create_task(
-                        asyncio.to_thread(
-                            _extract_dij_sync,
-                            temp_path,
-                            task,
-                            exam
-                        )
-                    )
-                    
-                    dij, warnings = await asyncio.wait_for(extraction_task, timeout=EXTRACTION_TIMEOUT)
-                    
-                except asyncio.TimeoutError:
-                    raise ExtractionError(
-                        message=f"Extraction exceeded maximum timeout ({EXTRACTION_TIMEOUT / 60:.0f} minutes)",
-                        error_code=ErrorCode.EXTRACTION_TIMEOUT,
-                        details={"timeout_seconds": EXTRACTION_TIMEOUT}
-                    )
-                
-                logger.info(
-                    f"DIJ extracted successfully: {len(dij.blocks)} blocks, "
-                    f"{len(warnings)} warnings"
-                )
-                
-                # Convert DIJ to JSON for storage
-                dij_json = dij.model_dump_json(indent=2)
-                
-                # Persist DIJ as S3 artifact (T101)
-                dij_storage_path = generate_artifact_path(
-                    user_id=task.user_id,
-                    exam_name=exam.name,
-                    filename=f"dij_v1_{task_id}.json"
-                )
-                
-                from io import BytesIO
-                dij_bytes = BytesIO(dij_json.encode('utf-8'))
-                
-                storage.upload_file(
-                    file_data=dij_bytes,
-                    file_path=dij_storage_path,
-                    content_type="application/json"
-                )
-                
-                logger.info(f"DIJ uploaded to S3: {dij_storage_path}")
-                
-                # Create Artifact database record for DIJ (T101)
-                dij_artifact = Artifact(
-                    exam_id=task.exam_id,
-                    task_id=task.task_id,
-                    artifact_type=ArtifactType.DIJ,
-                    file_name=f"dij_v1_{task_id}.json",
-                    file_path=dij_storage_path,
-                    mime_type="application/json"
-                )
-                db.add(dij_artifact)
-                await db.commit()
-                await db.refresh(dij_artifact)
-                
-                logger.info(f"DIJ artifact created: artifact_id={dij_artifact.artifact_id}")
-                
-                # Calculate extraction duration
-                duration_ms = int((time.time() - start_time) * 1000)
-                
-                # Build extraction response (T103)
-                return {
-                    "task_id": str(task_uuid),  # Convert UUID to string for JSON serialization
-                    "dij_artifact_id": str(dij_artifact.artifact_id),  # Convert UUID to string
-                    "blocks_extracted": len(dij.blocks),
-                    "duration_ms": duration_ms,
-                    "status": "completed",
-                    "error": None,
-                    "warnings": warnings,
-                    "metadata": {
-                        "source_filename": exam.name + ".docx",
-                        "file_size_bytes": len(file_data),
-                        "extraction_timestamp": dij.metadata.extraction_timestamp.isoformat(),
-                        "dij_version": dij.version
-                    }
-                }
-                
-            finally:
-                # Clean up temporary file
-                if temp_path.exists():
-                    temp_path.unlink()
-                    logger.debug(f"Cleaned up temporary file: {temp_path}")
-        
-        except ExtractionError as e:
-            # Structured extraction error (T110)
+
+            from io import BytesIO
+            dij_bytes = BytesIO(dij_json.encode('utf-8'))
+
+            storage.upload_file(
+                file_data=dij_bytes,
+                file_path=dij_storage_path,
+                content_type="application/json"
+            )
+
+            logger.info(f"DIJ uploaded to S3: {dij_storage_path}")
+
+            # Create Artifact database record for DIJ (T101)
+            dij_artifact = Artifact(
+                exam_id=task.exam_id,
+                task_id=task.task_id,
+                artifact_type=ArtifactType.DIJ,
+                file_name=f"dij_v1_{task_id}.json",
+                file_path=dij_storage_path,
+                mime_type="application/json"
+            )
+            db.add(dij_artifact)
+            await db.commit()
+            await db.refresh(dij_artifact)
+
+            logger.info(f"DIJ artifact created: artifact_id={dij_artifact.artifact_id}")
+
+            # Calculate extraction duration
             duration_ms = int((time.time() - start_time) * 1000)
-            logger.error(f"Extraction failed for task {task_id}: {e.message}", exc_info=True)
-            
+
+            # Build extraction response (T103)
             return {
-                "task_id": str(task_uuid),  # Convert UUID to string
-                "dij_artifact_id": None,
-                "blocks_extracted": 0,
+                "task_id": str(task_uuid),  # Convert UUID to string for JSON serialization
+                "dij_artifact_id": str(dij_artifact.artifact_id),  # Convert UUID to string
+                "blocks_extracted": len(dij.blocks),
                 "duration_ms": duration_ms,
-                "status": "failed",
-                "error": e.message,
-                "warnings": [],
+                "status": "completed",
+                "error": None,
+                "warnings": warnings,
                 "metadata": {
-                    "error_code": e.error_code.value if e.error_code else "UNKNOWN",
-                    "error_details": e.details
+                    "source_filename": exam.name + ".docx",
+                    "file_size_bytes": len(file_data),
+                    "extraction_timestamp": dij.metadata.extraction_timestamp.isoformat(),
+                    "dij_version": dij.version
                 }
             }
-        
-        except Exception as e:
-            # Unexpected errors
-            duration_ms = int((time.time() - start_time) * 1000)
-            logger.error(f"Unexpected error during extraction for task {task_id}: {str(e)}", exc_info=True)
-            
-            return {
-                "task_id": str(task_uuid),  # Convert UUID to string
-                "dij_artifact_id": None,
-                "blocks_extracted": 0,
-                "duration_ms": duration_ms,
-                "status": "failed",
-                "error": f"Unexpected error: {str(e)}",
-                "warnings": [],
-                "metadata": {}
+
+        finally:
+            # Clean up temporary file
+            if temp_path.exists():
+                temp_path.unlink()
+                logger.debug(f"Cleaned up temporary file: {temp_path}")
+
+    except ExtractionError as e:
+        # Structured extraction error (T110)
+        duration_ms = int((time.time() - start_time) * 1000)
+        logger.error(f"Extraction failed for task {task_id}: {e.message}", exc_info=True)
+
+        return {
+            "task_id": str(task_uuid),  # Convert UUID to string
+            "dij_artifact_id": None,
+            "blocks_extracted": 0,
+            "duration_ms": duration_ms,
+            "status": "failed",
+            "error": e.message,
+            "warnings": [],
+            "metadata": {
+                "error_code": e.error_code.value if e.error_code else "UNKNOWN",
+                "error_details": e.details
             }
+        }
+
+    except Exception as e:
+        # Unexpected errors
+        duration_ms = int((time.time() - start_time) * 1000)
+        logger.error(f"Unexpected error during extraction for task {task_id}: {str(e)}", exc_info=True)
+
+        return {
+            "task_id": str(task_uuid),  # Convert UUID to string
+            "dij_artifact_id": None,
+            "blocks_extracted": 0,
+            "duration_ms": duration_ms,
+            "status": "failed",
+            "error": f"Unexpected error: {str(e)}",
+            "warnings": [],
+            "metadata": {}
+        }
 
 
 async def ai_understanding(
     task_id: str,
-    simulate_failure: bool = False
+    simulate_failure: bool = False,
+    db: AsyncSession | None = None,
 ) -> dict[str, Any]:
     """
     Mock stage 2: Map extracted content to canonical schema using AI.
@@ -316,7 +318,8 @@ async def ai_understanding(
 
 async def ai_analysis(
     task_id: str,
-    simulate_failure: bool = False
+    simulate_failure: bool = False,
+    db: AsyncSession | None = None,
 ) -> dict[str, Any]:
     """
     Mock stage 3: Add metadata and quality checks using AI.
@@ -351,7 +354,8 @@ async def ai_analysis(
 
 async def shuffle(
     task_id: str,
-    simulate_failure: bool = False
+    simulate_failure: bool = False,
+    db: AsyncSession | None = None,
 ) -> dict[str, Any]:
     """
     Mock stage 4: Generate exam variants by shuffling questions/options.
@@ -386,7 +390,8 @@ async def shuffle(
 
 async def render_docx(
     task_id: str,
-    simulate_failure: bool = False
+    simulate_failure: bool = False,
+    db: AsyncSession | None = None,
 ) -> dict[str, Any]:
     """
     Mock stage 5: Export final documents as DOCX files.

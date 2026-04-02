@@ -170,7 +170,8 @@ async def _process_task_async(task_id_str: str, simulate_failure_stage: str | No
                         # Execute stage
                         result = await stage_func(
                             task_id=task_id_str,
-                            simulate_failure=should_fail
+                            simulate_failure=should_fail,
+                            db=db
                         )
 
                         # Update progress
